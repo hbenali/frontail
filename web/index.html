@@ -1,57 +1,196 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="en" data-theme="dark">
 <head>
-    <title>tail -f __TITLE__</title>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" type="text/css" href="__PATH__/styles/__THEME__.css">
-    <link rel="icon" href="__PATH__/favicon.ico">
+  <title>frontail — __TITLE__</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="__PATH__/favicon.ico">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300;0,400;0,500;1,400&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="__PATH__/styles/app.css">
+  <!-- Legacy: __THEME__ placeholder preserved for server compat -->
 </head>
-
 <body>
-    <nav class="topbar navbar navbar-inverse navbar-fixed-top" role="navigation">
-        <div class="container-fluid">
-            <div class="row">
-                <div class="col-sm-8">
-                    <span class="navbar-brand text-overflow" title="__TITLE__">tail -f __TITLE__</span>
-                </div>
-                <div class="col-sm-1 text-right">
-                    <button type="button" class="btn btn-light btn-pause" data-toggle="button" aria-pressed="false" autocomplete="off"></button>
-                </div>
-                <div class="col-sm-3">
-                    <form class="navbar-form-custom" role="search" onkeypress="return event.keyCode != 13;">
-                        <input type="text" class="form-control query" placeholder="Filter" tabindex="1">
-                    </form>
-                </div>
-            </div>
+  <div id="app">
+
+    <!-- Sidebar -->
+    <aside id="sidebar" class="sidebar">
+      <div class="sidebar-header">
+        <div class="logo">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+            <rect x="1" y="1" width="18" height="18" rx="4" stroke="var(--accent)" stroke-width="1.5"/>
+            <path d="M4.5 6.5h11M4.5 10h7M4.5 13.5h9" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+          <span class="logo-text">frontail</span>
         </div>
-    </nav>
+        <button class="sidebar-collapse-btn" id="sidebarCollapse" title="Collapse sidebar" aria-label="Collapse sidebar">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M9 2L4 7l5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
 
-    <div class="container-fluid no-horiz-padding">
-        <pre class="log"></pre>
-    </div>
+      <div class="sidebar-body">
 
+        <div class="section">
+          <div class="section-label">Source</div>
+          <div class="file-chip">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2 1h6l2.5 2.5V11H2V1z" stroke="currentColor" stroke-width="1.1" stroke-linejoin="round"/><path d="M8 1v2.5h2.5" stroke="currentColor" stroke-width="1.1" stroke-linejoin="round"/></svg>
+            <span id="fileTitle" title="__TITLE__">__TITLE__</span>
+          </div>
+        </div>
 
-    <script src="__PATH__/socket.io/socket.io.js"></script>
-    <script src="__PATH__/tinycon.min.js"></script>
-    <script src="__PATH__/ansi_up.js"></script>
-    <script src="__PATH__/app.js"></script>
-    <script type="text/javascript">
-        var socket = new io.connect('/__NAMESPACE__', {
-            path: '__PATH__/socket.io',
-            transports: ['websocket']
-        });
+        <div class="section">
+          <div class="section-label">Live Stats</div>
+          <div class="stats-grid">
+            <div class="stat-card">
+              <span class="stat-val" id="totalLines">0</span>
+              <span class="stat-name">Total</span>
+            </div>
+            <div class="stat-card">
+              <span class="stat-val" id="visibleLines">0</span>
+              <span class="stat-name">Visible</span>
+            </div>
+            <div class="stat-card error">
+              <span class="stat-val" id="errorCount">0</span>
+              <span class="stat-name">Errors</span>
+            </div>
+            <div class="stat-card warn">
+              <span class="stat-val" id="warnCount">0</span>
+              <span class="stat-name">Warns</span>
+            </div>
+          </div>
+        </div>
 
-        window.load = App.init({
-            socket: socket,
-            container: document.getElementsByClassName('log')[0],
-            filterInput: document.getElementsByClassName('query')[0],
-            pauseBtn: document.getElementsByClassName('btn-pause')[0],
-            topbar: document.getElementsByClassName('topbar')[0],
-            body: document.getElementsByTagName('body')[0]
-        });
-    </script>
+        <div class="section">
+          <div class="section-label">Filter</div>
+          <div class="input-group">
+            <svg class="input-icon" width="13" height="13" viewBox="0 0 13 13" fill="none" aria-hidden="true"><circle cx="5.5" cy="5.5" r="4" stroke="currentColor" stroke-width="1.2"/><path d="M9 9l2.5 2.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+            <input type="text" class="text-input" id="filterInput" placeholder="Filter logs…" tabindex="1" autocomplete="off" spellcheck="false">
+            <button class="clear-btn hidden" id="filterClear" aria-label="Clear filter">
+              <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M1.5 1.5l8 8M9.5 1.5l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+            </button>
+          </div>
+          <div class="toggle-row">
+            <label class="toggle-item"><input type="checkbox" id="regexMode" class="chip-check"><span class="chip">Regex</span></label>
+            <label class="toggle-item"><input type="checkbox" id="caseSensitive" class="chip-check"><span class="chip">Case</span></label>
+            <label class="toggle-item"><input type="checkbox" id="invertFilter" class="chip-check"><span class="chip">Invert</span></label>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-label">Highlight Keywords</div>
+          <div class="highlight-list" id="highlightList"></div>
+          <div class="input-group" style="margin-top:8px">
+            <input type="text" class="text-input" id="highlightInput" placeholder="Add keyword…" autocomplete="off" spellcheck="false">
+            <button class="add-btn" id="highlightAdd" aria-label="Add highlight">
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1.5v9M1.5 6h9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-label">Controls</div>
+          <div class="ctrl-grid">
+            <button class="ctrl-btn" id="pauseBtn" data-state="running" aria-label="Pause/Resume">
+              <svg id="pauseIcon" width="13" height="13" viewBox="0 0 13 13" fill="none"><rect x="1.5" y="1.5" width="3.5" height="10" rx="1" fill="currentColor"/><rect x="8" y="1.5" width="3.5" height="10" rx="1" fill="currentColor"/></svg>
+              <span id="pauseLabel">Pause</span>
+            </button>
+            <button class="ctrl-btn" id="clearBtn" aria-label="Clear logs">
+              <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2 4h9M4.5 4V2.5h4V4M3 4l.6 7h5.8l.6-7" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <span>Clear</span>
+            </button>
+            <button class="ctrl-btn" id="wrapBtn" data-state="off" aria-label="Toggle word wrap">
+              <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M1.5 3.5h10M1.5 6.5h6a2 2 0 010 4H6M8.5 8.5l2 2-2 2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <span>Wrap</span>
+            </button>
+            <button class="ctrl-btn" id="timestampBtn" data-state="off" aria-label="Toggle timestamps">
+              <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><circle cx="6.5" cy="6.5" r="4.5" stroke="currentColor" stroke-width="1.2"/><path d="M6.5 3.5v3l2 1.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <span>Time</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-label">Theme</div>
+          <div class="theme-pills">
+            <button class="theme-pill active" data-theme="dark">Dark</button>
+            <button class="theme-pill" data-theme="light">Light</button>
+            <button class="theme-pill" data-theme="solarized">Solar</button>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="sidebar-footer">
+        <div class="conn-status" id="connStatus">
+          <span class="conn-dot" id="connDot"></span>
+          <span id="connText">Connecting…</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main log area -->
+    <main id="main" class="main">
+      <header class="topbar" id="topbar">
+        <button class="expand-sidebar-btn hidden" id="expandSidebar" title="Show sidebar" aria-label="Show sidebar">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M5 2L10 8l-5 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <div class="topbar-brand">
+          <svg width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+            <rect x="1" y="1" width="18" height="18" rx="4" stroke="var(--accent)" stroke-width="1.5"/>
+            <path d="M4.5 6.5h11M4.5 10h7M4.5 13.5h9" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+          <span class="topbar-file" id="topbarTitle" title="__TITLE__">__TITLE__</span>
+        </div>
+        <div class="topbar-right">
+          <div class="skipped-badge hidden" id="skippedBadge">
+            <span id="skippedCount">0</span> skipped
+          </div>
+          <div class="live-indicator" id="liveIndicator">
+            <span class="live-dot"></span>
+            <span>LIVE</span>
+          </div>
+        </div>
+      </header>
+
+      <div class="log-viewport" id="logViewport">
+        <div class="empty-state" id="emptyState">
+          <svg width="48" height="48" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+            <rect x="4" y="4" width="40" height="40" rx="8" stroke="currentColor" stroke-width="1.5" opacity="0.3"/>
+            <path d="M12 18h24M12 24h16M12 30h20" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity="0.3"/>
+          </svg>
+          <p>Waiting for log data…</p>
+          <span>Lines will appear here as they stream in.</span>
+        </div>
+        <pre id="logContainer" class="log-pre" role="log" aria-live="polite" aria-label="Log output"></pre>
+      </div>
+
+      <button class="fab-scroll" id="fabScroll" aria-label="Scroll to bottom">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 3v9M4 9l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span class="fab-count" id="fabCount"></span>
+      </button>
+    </main>
+  </div>
+
+  <div id="toastContainer" class="toast-container" aria-live="assertive" aria-atomic="true"></div>
+
+  <script src="__PATH__/socket.io/socket.io.js"></script>
+  <script src="__PATH__/tinycon.min.js"></script>
+  <script src="__PATH__/ansi_up.js"></script>
+  <script src="__PATH__/app.js"></script>
+  <script>
+    var socket = new io.connect('/__NAMESPACE__', {
+      path: '__PATH__/socket.io',
+      transports: ['websocket']
+    });
+    window.load = App.init({
+      socket: socket,
+      container: document.getElementById('logContainer'),
+      filterInput: document.getElementById('filterInput'),
+      pauseBtn: document.getElementById('pauseBtn'),
+      topbar: document.getElementById('topbar'),
+      body: document.body
+    });
+  </script>
 </body>
-
 </html>
