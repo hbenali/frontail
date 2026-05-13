@@ -437,7 +437,7 @@ body {
   border: 1px solid var(--border);
   color: var(--text-secondary);
   background: var(--bg-raised);
-  transition: all 0.15s;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
 }
 
 .theme-pill:hover {
@@ -445,10 +445,24 @@ body {
   color: var(--text-primary);
 }
 
-.theme-pill.active {
-  background: var(--accent-glow);
-  border-color: var(--accent);
-  color: var(--accent);
+/* Active state uses hard-coded per-theme colors so they remain correct
+   regardless of which theme's CSS variables are currently live.        */
+.theme-pill[data-theme="dark"].active {
+  background: rgba(79,142,247,0.15);
+  border-color: #4f8ef7;
+  color: #4f8ef7;
+}
+
+.theme-pill[data-theme="light"].active {
+  background: rgba(37,99,235,0.12);
+  border-color: #2563eb;
+  color: #2563eb;
+}
+
+.theme-pill[data-theme="solarized"].active {
+  background: rgba(38,139,210,0.18);
+  border-color: #268bd2;
+  color: #268bd2;
 }
 
 /* ── Connection status ───────────────────────────────────────── */
@@ -820,28 +834,99 @@ body {
 .log-pre .ansi-blue   { color: var(--accent) }
 .log-pre .ansi-white  { color: var(--text-primary) }
 
-/* ── Responsive ──────────────────────────────────────────────── */
+/* ── Responsive / Mobile ─────────────────────────────────────── */
 @media (max-width: 640px) {
   :root { --sidebar-width: 100vw }
 
+  /* The whole layout stacks: sidebar slides in as a full-screen sheet,
+     main area is always full width underneath the fixed topbar.        */
+  #app {
+    flex-direction: column;
+    position: relative;
+  }
+
+  /* Sidebar becomes a full-screen overlay panel */
   .sidebar {
     position: fixed;
-    inset: 0 auto 0 0;
+    inset: 0;
+    width: 100vw !important;
     z-index: 50;
     transform: translateX(0);
-    transition: transform 0.25s ease;
+    transition: transform 0.28s cubic-bezier(0.4,0,0.2,1);
+    overflow-y: auto;
   }
 
   .sidebar.collapsed {
-    width: var(--sidebar-width);
-    opacity: 1;
-    pointer-events: auto;
     transform: translateX(-100%);
+    pointer-events: none;
   }
 
+  /* Main fills 100% width; topbar is sticky at top */
+  .main {
+    width: 100vw;
+    min-width: 0;
+  }
+
+  /* Topbar: show hamburger, hide expand-sidebar btn (it's on topbar already) */
+  .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 40;
+  }
+
+  .expand-sidebar-btn {
+    display: flex !important;  /* always show on mobile */
+  }
+
+  /* Log viewport: fill remaining height below topbar, no x-scroll */
+  .log-viewport {
+    height: calc(100dvh - 44px);
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  /* Log lines wrap; no horizontal scroll on mobile */
+  .log-pre {
+    white-space: pre-wrap !important;
+    word-break: break-all;
+    overflow-x: hidden;
+  }
+
+  /* Tighter line padding on small screens */
+  .log-line {
+    padding: 0 8px;
+  }
+
+  /* Gutter line numbers hidden on mobile to save space */
+  .line-number {
+    display: none;
+  }
+
+  /* FAB lower-right, safe area aware */
   .fab-scroll {
-    bottom: 16px;
+    bottom: calc(16px + env(safe-area-inset-bottom, 0px));
     right: 16px;
+  }
+
+  /* Sidebar header close button more tappable */
+  .sidebar-collapse-btn {
+    width: 36px;
+    height: 36px;
+  }
+
+  /* Sidebar body padding */
+  .sidebar-body {
+    padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  }
+
+  /* Stats grid full-width 2-col */
+  .stats-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  /* Control buttons full-width */
+  .ctrl-grid {
+    grid-template-columns: 1fr 1fr;
   }
 }
 

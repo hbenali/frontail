@@ -1,132 +1,213 @@
-# frontail – streaming logs to the browser
+# frontail — streaming logs to the browser
 
-`frontail` is a Node.js application for streaming logs to the browser. It's a `tail -F` with UI.
+> **This repository is a fork of [mthenw/frontail](https://github.com/mthenw/frontail) by [@hbenali](https://github.com/hbenali), extended with a modernised UI, richer features, and an updated Docker base image.**
 
-![frontial](https://user-images.githubusercontent.com/455261/29570317-660c8122-8756-11e7-9d2f-8fea19e05211.gif)
+`frontail` is a Node.js application that streams log files to the browser — `tail -F` with a UI. Point it at any file (or stdin) and watch lines appear in real time.
 
-[![Docker Pulls](https://img.shields.io/docker/pulls/mthenw/frontail.svg)](https://hub.docker.com/r/mthenw/frontail/)
+---
 
 ## Quick start
 
-- `npm i frontail -g` or download a binary file from [Releases](https://github.com/mthenw/frontail/releases) page
-- `frontail /var/log/syslog`
-- visit [http://127.0.0.1:9001](http://127.0.0.1:9001)
+```bash
+npm i frontail -g
+frontail /var/log/syslog
+# open http://127.0.0.1:9001
+```
+
+Or with Docker:
+
+```bash
+docker run -d -p 9001:9001 -v /var/log:/log hbenali/frontail /log/syslog
+```
+
+---
+
+## What's new in this fork
+
+| Area | Change |
+|---|---|
+| **UI** | Full sidebar/main two-pane layout, JetBrains Mono log font |
+| **Themes** | Dark, Light, Solarized — switched at runtime with correct per-theme button colours |
+| **Persistence** | Theme, word wrap, timestamps, filter, and sidebar state saved in `localStorage` |
+| **Filter** | Regex mode, case-sensitive toggle, invert-filter, inline match highlighting |
+| **Highlight** | Up to 5 colour-coded keyword highlighters, applied to all existing and new lines |
+| **Stats** | Live counters for total / visible / error / warn lines |
+| **Line numbers** | Gutter line numbers on every entry |
+| **Timestamps** | Per-line `HH:MM:SS.ms` toggle |
+| **Mobile** | Full-screen sidebar sheet, no horizontal scroll, word-wrap forced, safe-area aware |
+| **Keyboard** | `Ctrl/Cmd+K` focus filter · `Space` pause · `Shift+G` jump to bottom · `Esc` clear |
+| **Docker** | Multi-stage build, Node 24 LTS on Debian Bookworm Slim, non-root user |
+
+---
 
 ## Features
 
-- log rotation (not on Windows)
-- auto-scrolling
-- marking logs
-- pausing logs
-- number of unread logs in favicon
-- themes (default, dark)
-- [highlighting](#highlighting)
-- search (`Tab` to focus, `Esc` to clear)
-- set filter from url parameter `filter`
-- tailing [multiple files](#tailing-multiple-files) and [stdin](#stdin)
-- basic authentication
+- Real-time log streaming over WebSocket
+- Log rotation support (Linux/macOS)
+- Auto-scroll with scroll-to-bottom FAB (shows `+N` new lines count)
+- Pause / resume stream with skip counter
+- Unread-line count in browser favicon
+- Three built-in themes (Dark · Light · Solarized) — all settings persisted across sessions
+- Advanced filter: plain text, regex, case-sensitive, invert
+- Keyword highlight (up to 5 coloured keywords)
+- ANSI colour code rendering
+- Click any line to select / deselect
+- Word wrap toggle
+- Per-line timestamps toggle
+- Live stats: total / visible / errors / warnings
+- Tailing multiple files and stdin
+- Basic authentication (`-U` / `-P`)
+- HTTPS (`-k` / `-c`)
+- Running behind a path prefix (`--url-path`, `--path`)
+- Customisable log highlighting presets
 
-## Installation options
+---
 
-- download a binary file from [Releases](https://github.com/mthenw/frontail/releases) pagegit st
-- using [npm package](https://www.npmjs.com/package/frontail): `npm i frontail -g`
-- using [Docker image](https://cloud.docker.com/repository/docker/mthenw/frontail): `docker run -d -P -v /var/log:/log mthenw/frontail /log/syslog`
+## Installation
+
+```bash
+# npm (global)
+npm i frontail -g
+
+# Docker
+docker run -d -p 9001:9001 -v /var/log:/log hbenali/frontail /log/syslog
+```
+
+---
 
 ## Usage
 
-    frontail [options] [file ...]
-
-    Options:
-
-      -V, --version                 output the version number
-      -h, --host <host>             listening host, default 0.0.0.0
-      -p, --port <port>             listening port, default 9001
-      -n, --number <number>         starting lines number, default 10
-      -l, --lines <lines>           number on lines stored in browser, default 2000
-      -t, --theme <theme>           name of the theme (default, dark)
-      -d, --daemonize               run as daemon
-      -U, --user <username>         Basic Authentication username, option works only along with -P option
-      -P, --password <password>     Basic Authentication password, option works only along with -U option
-      -k, --key <key.pem>           Private Key for HTTPS, option works only along with -c option
-      -c, --certificate <cert.pem>  Certificate for HTTPS, option works only along with -k option
-      --pid-path <path>             if run as daemon file that will store the process id, default /var/run/frontail.pid
-      --log-path <path>             if run as daemon file that will be used as a log, default /dev/null
-      --url-path <path>             URL path for the browser application, default /
-      --ui-hide-topbar              hide topbar (log file name and search box)
-      --ui-no-indent                don't indent log lines
-      --ui-highlight                highlight words or lines if defined string found in logs, default preset
-      --ui-highlight-preset <path>  custom preset for highlighting (see ./preset/default.json)
-      --path <path>                 prefix path for the running application, default /
-      --disable-usage-stats         disable gathering usage statistics
-      --help                        output usage information
-
-Web interface runs on **http://[host]:[port]**.
-
-### Tailing multiple files
-
-`[file ...]` accepts multiple paths, `*`, `?` and other shell special characters([Wildcards, Quotes, Back Quotes and Apostrophes in shell commands](http://www.codecoffee.com/tipsforlinux/articles/26-1.html)).
-
-### stdin
-
-Use `-` for streaming stdin:
-
-    ./server | frontail -
-
-### Highlighting
-
-`--ui-highlight` option turns on highlighting in UI. By default preset from `./preset/default.json` is used:
-
 ```
+frontail [options] [file ...]
+
+Options:
+  -V, --version                 output the version number
+  -h, --host <host>             listening host (default: 0.0.0.0)
+  -p, --port <port>             listening port (default: 9001)
+  -n, --number <number>         starting lines number (default: 10)
+  -l, --lines <lines>           lines stored in browser (default: 2000)
+  -t, --theme <theme>           name of the theme (default, dark)
+  -d, --daemonize               run as daemon
+  -U, --user <username>         Basic Auth username (requires -P)
+  -P, --password <password>     Basic Auth password (requires -U)
+  -k, --key <key.pem>           Private key for HTTPS (requires -c)
+  -c, --certificate <cert.pem>  Certificate for HTTPS (requires -k)
+  --pid-path <path>             daemon PID file (default: /var/run/frontail.pid)
+  --log-path <path>             daemon log file (default: /dev/null)
+  --url-path <path>             URL path for browser app (default: /)
+  --ui-hide-topbar              hide topbar
+  --ui-no-indent                don't indent log lines
+  --ui-highlight                enable word/line highlighting
+  --ui-highlight-preset <path>  custom highlight preset JSON
+  --path <path>                 prefix path (default: /)
+  --disable-usage-stats         disable anonymous usage statistics
+  --help                        output usage information
+```
+
+Web interface: **http://[host]:[port]**
+
+---
+
+## Keyboard shortcuts
+
+| Key | Action |
+|---|---|
+| `Ctrl/Cmd + K` | Focus filter input |
+| `Space` | Pause / resume stream |
+| `Shift + G` | Scroll to bottom |
+| `Esc` | Clear filter |
+
+---
+
+## Mobile
+
+On small screens the sidebar becomes a full-screen overlay panel. Tap the **☰** icon in the top-left to open it, and use the **←** button inside to close it and return to the log view. Logs wrap to the window width with no horizontal scroll.
+
+---
+
+## Tailing multiple files
+
+`[file ...]` accepts multiple paths and shell glob patterns:
+
+```bash
+frontail /var/log/nginx/access.log /var/log/nginx/error.log
+frontail /var/log/*.log
+```
+
+## stdin
+
+Use `-` to stream stdin:
+
+```bash
+./server | frontail -
+```
+
+---
+
+## Highlighting presets
+
+`--ui-highlight` enables log highlighting. The default preset is `./preset/default.json`:
+
+```json
 {
-    "words": {
-        "err": "color: red;"
-    },
-    "lines": {
-        "err": "font-weight: bold;"
-    }
+  "words": {
+    "err": "color: red;"
+  },
+  "lines": {
+    "err": "font-weight: bold;"
+  }
 }
 ```
 
-which means that every "err" string will be in red and every line containing "err" will be bolded.
+Available presets: `default`, `npmlog`, `python`.
 
-_New presets are very welcome. If you don't like default or you would like to share yours, please create PR with json file._
+---
 
-Available presets:
+## Running behind nginx
 
-- default
-- npmlog
-- python
-
-### Running behind nginx
-
-Using the `--url-path` option `frontail` can run behind nginx with the example configuration
-
-Using `frontail` with `--url-path /frontail`
-
-```
-events {
-    worker_connections 1024;
-}
+```nginx
+events { worker_connections 1024; }
 
 http {
-    server {
-        listen      8080;
-        server_name localhost;
+  server {
+    listen 8080;
 
-        location /frontail {
-            proxy_pass http://127.0.0.1:9001/frontail;
-
-            proxy_http_version 1.1;
-            proxy_set_header Upgrade $http_upgrade;
-            proxy_set_header Connection "upgrade";
-        }
+    location /frontail {
+      proxy_pass http://127.0.0.1:9001/frontail;
+      proxy_http_version 1.1;
+      proxy_set_header Upgrade    $http_upgrade;
+      proxy_set_header Connection "upgrade";
     }
+  }
 }
 ```
 
-### Usage statistics
+Start frontail with `--url-path /frontail`.
 
-`frontail` by default (from `v4.5.0`) gathers **anonymous** usage statistics in Google Analytics. It can be disabled with
-`--disable-usage-stats`.
+---
 
-The data is used to help me understand how `frontail` is used and I can make it better.
+## Docker
+
+```bash
+# Build
+docker build -t hbenali/frontail .
+
+# Run
+docker run -d \
+  -p 9001:9001 \
+  -v /var/log:/log \
+  hbenali/frontail /log/syslog
+```
+
+The image uses a **multi-stage build** (Node 24 LTS on Debian Bookworm Slim) and runs as a non-root user for improved security.
+
+---
+
+## Credits
+
+- Original project: **[mthenw/frontail](https://github.com/mthenw/frontail)** by Maciej Winnicki
+- This fork maintained by **[@hbenali](https://github.com/hbenali)**
+
+## License
+
+MIT

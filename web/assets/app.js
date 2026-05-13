@@ -39,6 +39,24 @@ window.App = (function app(window, document) {
   ];
   var _highlightAccentColors = ['#4f8ef7','#f77070','#6ad19e','#f7b955','#c084fc'];
 
+  // ── LocalStorage persistence ───────────────────────────────────
+  var STORAGE_KEY = 'frontail:settings';
+
+  function _loadSettings() {
+    try {
+      var raw = localStorage.getItem(STORAGE_KEY);
+      return raw ? JSON.parse(raw) : {};
+    } catch(e) { return {}; }
+  }
+
+  function _saveSettings(patch) {
+    try {
+      var current = _loadSettings();
+      var merged  = Object.assign({}, current, patch);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+    } catch(e) {}
+  }
+
   // DOM refs
   var _elTotalLines, _elVisibleLines, _elErrorCount, _elWarnCount;
   var _elFilterClear, _elRegexMode, _elCaseSensitive, _elInvertFilter;
@@ -243,6 +261,7 @@ window.App = (function app(window, document) {
     var sidebar = document.getElementById('sidebar');
     if (sidebar) sidebar.classList.toggle('collapsed', collapsed);
     if (_elExpandSidebar) _elExpandSidebar.classList.toggle('hidden', !collapsed);
+    _saveSettings({ sidebarCollapsed: collapsed });
   }
 
   // ── Highlight tag UI ───────────────────────────────────────────
@@ -394,6 +413,7 @@ window.App = (function app(window, document) {
           else { _filterValue = this.value; }
           if (_elFilterClear) _elFilterClear.classList.toggle('hidden', !_filterValue);
           _setFilterParam(_filterValue);
+          _saveSettings({ filter: _filterValue });
           _filterAllLogs();
           _reHighlightAll();
         });
@@ -434,6 +454,7 @@ window.App = (function app(window, document) {
       if (_pauseBtn) {
         _pauseBtn.addEventListener('click', function() {
           _setPauseState(!_isPaused);
+          _saveSettings({ paused: _isPaused });
           _showToast(_isPaused ? 'Paused — buffering new lines' : 'Resumed streaming');
         });
       }
@@ -456,6 +477,7 @@ window.App = (function app(window, document) {
           _wrapEnabled = !_wrapEnabled;
           if (_logContainer) _logContainer.classList.toggle('wrap', _wrapEnabled);
           _elWrapBtn.classList.toggle('active', _wrapEnabled);
+          _saveSettings({ wrap: _wrapEnabled });
           _showToast(_wrapEnabled ? 'Word wrap on' : 'Word wrap off');
         });
       }
@@ -469,6 +491,7 @@ window.App = (function app(window, document) {
           for (var i = 0; i < stamps.length; i++) {
             stamps[i].classList.toggle('hidden', !_timestampEnabled);
           }
+          _saveSettings({ timestamps: _timestampEnabled });
           _showToast(_timestampEnabled ? 'Timestamps visible' : 'Timestamps hidden');
         });
       }
@@ -483,12 +506,19 @@ window.App = (function app(window, document) {
 
       // Theme switcher
       var themePills = document.querySelectorAll('.theme-pill');
+
+      function _applyTheme(theme, persist) {
+        document.documentElement.setAttribute('data-theme', theme);
+        for (var j = 0; j < themePills.length; j++) {
+          themePills[j].classList.toggle('active', themePills[j].getAttribute('data-theme') === theme);
+        }
+        if (persist) _saveSettings({ theme: theme });
+      }
+
       for (var ti = 0; ti < themePills.length; ti++) {
         themePills[ti].addEventListener('click', function() {
           var theme = this.getAttribute('data-theme');
-          document.documentElement.setAttribute('data-theme', theme);
-          for (var j = 0; j < themePills.length; j++) themePills[j].classList.remove('active');
-          this.classList.add('active');
+          _applyTheme(theme, true);
           _showToast('Theme: ' + theme);
         });
       }
@@ -563,6 +593,40 @@ window.App = (function app(window, document) {
         });
 
       _setConnStatus('connecting', 'Connecting…');
+
+      // ── Restore persisted settings ──────────────────────────────
+      var _saved = _loadSettings();
+
+      if (_saved.theme) {
+        _applyTheme(_saved.theme, false);
+      }
+
+      if (_saved.wrap) {
+        _wrapEnabled = true;
+        if (_logContainer) _logContainer.classList.add('wrap');
+        if (_elWrapBtn) _elWrapBtn.classList.add('active');
+      }
+
+      if (_saved.timestamps) {
+        _timestampEnabled = true;
+        if (_elTimestampBtn) _elTimestampBtn.classList.add('active');
+      }
+
+      // Restore filter from localStorage (URL param takes precedence)
+      if (!_filterValue && _saved.filter) {
+        _filterValue = _saved.filter;
+        if (_filterInput) _filterInput.value = _filterValue;
+        if (_elFilterClear) _elFilterClear.classList.toggle('hidden', !_filterValue);
+      }
+
+      // On mobile, sidebar defaults to collapsed; restore preference on desktop
+      var _isMobile = window.matchMedia('(max-width: 640px)').matches;
+      if (_isMobile) {
+        _setSidebarCollapsed(true);
+      } else if (_saved.sidebarCollapsed) {
+        _setSidebarCollapsed(true);
+      }
+
     },
 
     log: function log(data, replace) {
