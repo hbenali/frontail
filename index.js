@@ -61,7 +61,8 @@ if (program.daemonize) {
       files,
       filesNamespace,
       program.theme
-    );
+    )
+    .download(program.args.map((f) => require('path').resolve(f)));
 
   const builder = serverBuilder();
   if (doSecure) {
@@ -129,6 +130,9 @@ if (program.daemonize) {
     buffer: program.number,
   });
 
+  // File-size threshold for warning (50 MB)
+  const FILE_SIZE_WARNING_BYTES = 50 * 1024 * 1024;
+
   const filesSocket = io.of(`/${filesNamespace}`).on('connection', (socket) => {
     socket.emit('options:lines', program.lines);
 
@@ -146,6 +150,32 @@ if (program.daemonize) {
 
     tailer.getBuffer().forEach((line) => {
       socket.emit('line', line);
+    });
+
+    // Client requests full file from beginning
+    socket.on('read-from-start', (data) => {
+      const fileIndex = (data && data.fileIndex) || 0;
+      const force     = !!(data && data.force);
+      const filePath  = program.args[fileIndex];
+      if (!filePath) return;
+
+      let stat;
+      try { stat = fs.statSync(filePath); } catch (_) { return; }
+
+      const tooLarge = stat.size > FILE_SIZE_WARNING_BYTES;
+
+      // Always inform client of size; tooLarge flag only set when NOT forcing
+      socket.emit('file-start-info', { size: stat.size, tooLarge: tooLarge && !force });
+
+      if (tooLarge && !force) return; // client will show warning / download prompt
+
+      // Stream the whole file line by line back to this socket only
+      const readline = require('readline');
+      const rl = readline.createInterface({
+        input: fs.createReadStream(filePath, { encoding: 'utf8' }),
+        crlfDelay: Infinity,
+      });
+      rl.on('line', (line) => socket.emit('line', line));
     });
   });
 

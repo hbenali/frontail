@@ -112,6 +112,14 @@
               <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><circle cx="6.5" cy="6.5" r="4.5" stroke="currentColor" stroke-width="1.2"/><path d="M6.5 3.5v3l2 1.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
               <span>Time</span>
             </button>
+            <button class="ctrl-btn" id="readFromStartBtn" aria-label="Read from file beginning">
+              <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2 2v9M4 6.5h7M8 3.5l3 3-3 3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <span>Start</span>
+            </button>
+            <button class="ctrl-btn" id="downloadBtn" aria-label="Download log file">
+              <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M6.5 2v6.5M4 6l2.5 3L9 6M2 11h9" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <span>Download</span>
+            </button>
           </div>
         </div>
 
@@ -132,6 +140,12 @@
           <span id="connText">Connecting…</span>
         </div>
       </div>
+      <div class="sidebar-copyright">
+        <span>© <a href="https://www.hbenali.ovh" target="_blank" rel="noopener">hbenali</a></span>
+        <span class="copyright-sep">·</span>
+        <a href="https://github.com/hbenali/frontail" target="_blank" rel="noopener">GitHub</a>
+      </div>
+
     </aside>
 
     <!-- Main log area -->
@@ -177,6 +191,30 @@
     </main>
   </div>
 
+
+  <!-- File-size warning modal -->
+  <div class="modal-overlay hidden" id="modalOverlay" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal">
+      <div class="modal-icon">
+        <svg width="32" height="32" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+          <path d="M16 3L30 28H2L16 3z" stroke="var(--warn-color)" stroke-width="1.5" stroke-linejoin="round" fill="rgba(247,185,85,0.1)"/>
+          <path d="M16 13v7M16 23v2" stroke="var(--warn-color)" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <h2 class="modal-title" id="modalTitle">Large file detected</h2>
+      <p class="modal-body" id="modalBody">This file exceeds 50 MB and may be slow or crash your browser tab if loaded in full.</p>
+      <p class="modal-size" id="modalSize"></p>
+      <div class="modal-actions">
+        <button class="modal-btn modal-btn-secondary" id="modalCancel">Cancel</button>
+        <button class="modal-btn modal-btn-ghost" id="modalLoadAnyway">Load anyway</button>
+        <button class="modal-btn modal-btn-primary" id="modalDownload">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 2v7M4.5 6.5L7 9.5l2.5-3M2 12h10" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Download file
+        </button>
+      </div>
+    </div>
+  </div>
+
   <div id="toastContainer" class="toast-container" aria-live="assertive" aria-atomic="true"></div>
 
   <script src="__PATH__/socket.io/socket.io.js"></script>
@@ -184,6 +222,7 @@
   <script src="__PATH__/ansi_up.js"></script>
   <script src="__PATH__/app.js"></script>
   <script>
+    window._frontailPath = '__PATH__';
     var socket = new io.connect('/__NAMESPACE__', {
       path: '__PATH__/socket.io',
       transports: ['websocket']

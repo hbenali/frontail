@@ -932,3 +932,147 @@ body {
 
 /* ── Transition helpers ──────────────────────────────────────── */
 [data-theme] { transition: background 0.25s, color 0.25s, border-color 0.25s }
+
+/* ── Modal overlay ───────────────────────────────────────────── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.55);
+  backdrop-filter: blur(3px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  padding: 20px;
+  animation: fadein 0.18s ease;
+}
+
+.modal-overlay.hidden {
+  display: none;
+}
+
+@keyframes fadein {
+  from { opacity: 0 }
+  to   { opacity: 1 }
+}
+
+.modal {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-strong);
+  border-radius: 12px;
+  padding: 28px 28px 24px;
+  max-width: 420px;
+  width: 100%;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.4);
+  animation: slidein 0.2s cubic-bezier(0.34,1.56,0.64,1);
+}
+
+@keyframes slidein {
+  from { transform: translateY(12px); opacity: 0 }
+  to   { transform: translateY(0);    opacity: 1 }
+}
+
+.modal-icon {
+  margin-bottom: 14px;
+}
+
+.modal-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+
+.modal-body {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin-bottom: 6px;
+}
+
+.modal-size {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--warn-color);
+  margin-bottom: 20px;
+  background: rgba(247,185,85,0.08);
+  border: 1px solid rgba(247,185,85,0.2);
+  border-radius: 6px;
+  padding: 5px 10px;
+  display: inline-block;
+}
+
+.modal-size:empty { display: none }
+
+.modal-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+.modal-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 7px;
+  font-size: 13px;
+  font-weight: 500;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, opacity 0.15s;
+}
+
+.modal-btn-secondary {
+  background: var(--bg-raised);
+  border-color: var(--border);
+  color: var(--text-secondary);
+}
+.modal-btn-secondary:hover {
+  border-color: var(--border-strong);
+  color: var(--text-primary);
+}
+
+.modal-btn-ghost {
+  background: transparent;
+  border-color: var(--border-strong);
+  color: var(--text-secondary);
+}
+.modal-btn-ghost:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.modal-btn-primary {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+.modal-btn-primary:hover { opacity: 0.88 }
+
+/* ── Copyright footer ────────────────────────────────────────── */
+.sidebar-copyright {
+  padding: 8px 14px;
+  border-top: 1px solid var(--border);
+  font-size: 10px;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+
+.sidebar-copyright a {
+  color: var(--text-muted);
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+.sidebar-copyright a:hover {
+  color: var(--accent);
+}
+
+.copyright-sep {
+  opacity: 0.5;
+}

@@ -102,6 +102,14 @@ window.App = (function app(window, document) {
     }, duration || 2000);
   }
 
+  // ── Byte formatter ────────────────────────────────────────────
+  function _formatBytes(bytes) {
+    if (bytes < 1024)        return bytes + ' B';
+    if (bytes < 1048576)     return (bytes / 1024).toFixed(1) + ' KB';
+    if (bytes < 1073741824)  return (bytes / 1048576).toFixed(1) + ' MB';
+    return (bytes / 1073741824).toFixed(2) + ' GB';
+  }
+
   // ── Stats ──────────────────────────────────────────────────────
 
   function _updateStats() {
@@ -402,6 +410,17 @@ window.App = (function app(window, document) {
       _elSidebarCollapse = document.getElementById('sidebarCollapse');
       _elExpandSidebar = document.getElementById('expandSidebar');
       _toastContainer  = document.getElementById('toastContainer');
+      var _elReadFromStartBtn = document.getElementById('readFromStartBtn');
+      var _elDownloadBtn      = document.getElementById('downloadBtn');
+      var _elModalOverlay     = document.getElementById('modalOverlay');
+      var _elModalBody        = document.getElementById('modalBody');
+      var _elModalSize        = document.getElementById('modalSize');
+      var _elModalCancel      = document.getElementById('modalCancel');
+      var _elModalDownload    = document.getElementById('modalDownload');
+      var _elModalLoadAnyway  = document.getElementById('modalLoadAnyway');
+      var _currentFileIndex   = 0;   // which file in multi-file mode
+      // _frontailPath is set by the inline <script> in index.html via __PATH__ substitution
+      var _urlPath = (window._frontailPath || '').replace(/\/$/, '');
 
       _setFilterValueFromURL();
 
@@ -496,6 +515,61 @@ window.App = (function app(window, document) {
         });
       }
 
+      // ── Download button ──────────────────────────────────────────
+      if (_elDownloadBtn) {
+        _elDownloadBtn.addEventListener('click', function() {
+          var href = _urlPath + '/download?file=' + _currentFileIndex;
+          var a = document.createElement('a');
+          a.href = href;
+          a.style.display = 'none';
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          _showToast('Downloading file…');
+        });
+      }
+
+      // ── Read from start button ───────────────────────────────────
+      function _openModal(size) {
+        if (_elModalSize) _elModalSize.textContent = 'File size: ' + _formatBytes(size);
+        if (_elModalOverlay) _elModalOverlay.classList.remove('hidden');
+      }
+      function _closeModal() {
+        if (_elModalOverlay) _elModalOverlay.classList.add('hidden');
+      }
+      if (_elModalCancel)  _elModalCancel.addEventListener('click',  _closeModal);
+      if (_elModalOverlay) {
+        _elModalOverlay.addEventListener('click', function(e) {
+          if (e.target === _elModalOverlay) _closeModal();
+        });
+      }
+      if (_elModalDownload) {
+        _elModalDownload.addEventListener('click', function() {
+          _closeModal();
+          var href = _urlPath + '/download?file=' + _currentFileIndex;
+          var a = document.createElement('a');
+          a.href = href;
+          a.style.display = 'none';
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+        });
+      }
+      if (_elModalLoadAnyway) {
+        _elModalLoadAnyway.addEventListener('click', function() {
+          _closeModal();
+          _socket.emit('read-from-start', { fileIndex: _currentFileIndex, force: true });
+          _showToast('Loading full file… this may take a moment');
+        });
+      }
+
+      if (_elReadFromStartBtn) {
+        _elReadFromStartBtn.addEventListener('click', function() {
+          _socket.emit('read-from-start', { fileIndex: _currentFileIndex });
+          _showToast('Requesting file from beginning…');
+        });
+      }
+
       // Sidebar collapse
       if (_elSidebarCollapse) {
         _elSidebarCollapse.addEventListener('click', function() { _setSidebarCollapsed(true); });
@@ -582,6 +656,17 @@ window.App = (function app(window, document) {
           if (_logContainer) _logContainer.classList.add('no-indent');
         })
         .on('options:highlightConfig', function(cfg) { _highlightConfig = cfg; })
+        .on('file-start-info', function(data) {
+          if (data.tooLarge) {
+            _openModal(data.size);
+          } else {
+            // Clear existing log and stream from start
+            if (_logContainer) _logContainer.innerHTML = '';
+            _totalLines = _visibleLines = _errorCount = _warnCount = _lineNumber = 0;
+            _updateStats();
+            _showToast('Streaming from file beginning…');
+          }
+        })
         .on('line', function(line) {
           if (_isPaused) {
             _skipCounter++;
