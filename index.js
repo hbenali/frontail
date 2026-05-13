@@ -56,13 +56,13 @@ if (program.daemonize) {
   }
   appBuilder
     .static(path.join(__dirname, 'web', 'assets'))
+    .download(program.args.map((f) => require('path').resolve(f)))
     .index(
       path.join(__dirname, 'web', 'index.html'),
       files,
       filesNamespace,
       program.theme
-    )
-    .download(program.args.map((f) => require('path').resolve(f)));
+    );
 
   const builder = serverBuilder();
   if (doSecure) {

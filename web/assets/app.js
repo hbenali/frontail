@@ -420,7 +420,9 @@ window.App = (function app(window, document) {
       var _elModalLoadAnyway  = document.getElementById('modalLoadAnyway');
       var _currentFileIndex   = 0;   // which file in multi-file mode
       // _frontailPath is set by the inline <script> in index.html via __PATH__ substitution
-      var _urlPath = (window._frontailPath || '').replace(/\/$/, '');
+      // Strip trailing slash; if path is exactly '/' reduce to '' so URLs don't double-slash
+      var _rawPath = (window._frontailPath || '').trim();
+      var _urlPath = (_rawPath === '/' ? '' : _rawPath.replace(/\/$/, ''));
 
       _setFilterValueFromURL();
 
@@ -515,17 +517,23 @@ window.App = (function app(window, document) {
         });
       }
 
-      // ── Download button ──────────────────────────────────────────
+      // ── Download helper (shared by button + modal) ───────────────
+      function _triggerDownload() {
+        var href = _urlPath + '/download?file=' + _currentFileIndex;
+        var a = document.createElement('a');
+        a.href = href;
+        a.setAttribute('download', '');
+        a.style.display = 'none';
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(function() { document.body.removeChild(a); }, 200);
+        _showToast('Downloading file…');
+      }
+
       if (_elDownloadBtn) {
-        _elDownloadBtn.addEventListener('click', function() {
-          var href = _urlPath + '/download?file=' + _currentFileIndex;
-          var a = document.createElement('a');
-          a.href = href;
-          a.style.display = 'none';
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
-          _showToast('Downloading file…');
+        _elDownloadBtn.addEventListener('click', function(e) {
+          e.preventDefault();
+          _triggerDownload();
         });
       }
 
@@ -546,13 +554,7 @@ window.App = (function app(window, document) {
       if (_elModalDownload) {
         _elModalDownload.addEventListener('click', function() {
           _closeModal();
-          var href = _urlPath + '/download?file=' + _currentFileIndex;
-          var a = document.createElement('a');
-          a.href = href;
-          a.style.display = 'none';
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
+          _triggerDownload();
         });
       }
       if (_elModalLoadAnyway) {
