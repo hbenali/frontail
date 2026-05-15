@@ -274,23 +274,39 @@ window.App = (function app(window, document) {
 
   // ── Highlight tag UI ───────────────────────────────────────────
 
+  var _BIP_LABELS = { 'off': '🔕 Off', 'first': '🔔 First', 'each': '🔔 Each' };
+  var _BIP_CYCLE  = { 'off': 'first', 'first': 'each', 'each': 'off' };
+
   function _renderHighlightTags() {
     if (!_elHighlightList) return;
     _elHighlightList.innerHTML = '';
     _userHighlights.forEach(function(h, idx) {
       var color = _highlightAccentColors[idx % _highlightAccentColors.length];
-      var tag = document.createElement('div');
+      var bip   = h.bip || 'off';
+      var tag   = document.createElement('div');
       tag.className = 'highlight-tag';
       tag.style.borderLeftColor = color;
       tag.innerHTML =
-        '<span>' + _escapeHtml(h.word) + '</span>' +
+        '<span class="hl-word">' + _escapeHtml(h.word) + '</span>' +
+        '<button class="bip-btn" data-idx="' + idx + '" title="Bip mode: ' + bip + '" aria-label="Toggle bip">' +
+          _BIP_LABELS[bip] +
+        '</button>' +
         '<button class="remove-tag" data-idx="' + idx + '" aria-label="Remove highlight">' +
         '<svg width="10" height="10" viewBox="0 0 10 10" fill="none">' +
         '<path d="M1.5 1.5l7 7M8.5 1.5l-7 7" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>' +
         '</svg></button>';
+      tag.querySelector('.bip-btn').addEventListener('click', function(e) {
+        var i = parseInt(e.currentTarget.getAttribute('data-idx'), 10);
+        var next = _BIP_CYCLE[_userHighlights[i].bip || 'off'];
+        _userHighlights[i].bip = next;
+        _saveHighlights();
+        _renderHighlightTags();
+        _showToast('Bip: ' + _userHighlights[i].word + ' → ' + next);
+      });
       tag.querySelector('.remove-tag').addEventListener('click', function(e) {
         var i = parseInt(e.currentTarget.getAttribute('data-idx'), 10);
         _userHighlights.splice(i, 1);
+        _saveHighlights();
         _renderHighlightTags();
         _reHighlightAll();
       });
@@ -298,7 +314,13 @@ window.App = (function app(window, document) {
     });
   }
 
-  function _addHighlight(word) {
+  function _saveHighlights() {
+    _saveSettings({ highlights: _userHighlights.map(function(h) {
+      return { word: h.word, bip: h.bip || 'off' };
+    }) });
+  }
+
+  function _addHighlight(word, bip) {
     word = (word || '').trim();
     if (!word) return;
     for (var i = 0; i < _userHighlights.length; i++) {
@@ -307,7 +329,8 @@ window.App = (function app(window, document) {
         return;
       }
     }
-    _userHighlights.push({ word: word });
+    _userHighlights.push({ word: word, bip: bip || 'off' });
+    _saveHighlights();
     _renderHighlightTags();
     _reHighlightAll();
     if (_elHighlightInput) _elHighlightInput.value = '';
@@ -368,6 +391,57 @@ window.App = (function app(window, document) {
     var ms = String(d.getMilliseconds()).padStart(3,'0');
     return hh + ':' + mm + ':' + ss + '.' + ms;
   }
+
+  // ── Bip (Web Audio) ───────────────────────────────────────────
+  var _audioCtx = null;
+  // Track which words have already beeped (for 'first' mode)
+  var _bipFired = {};
+
+  function _getAudioCtx() {
+    if (!_audioCtx) {
+      try {
+        _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      } catch(e) { return null; }
+    }
+    return _audioCtx;
+  }
+
+  function _playBip(frequency, duration) {
+    var ctx = _getAudioCtx();
+    if (!ctx) return;
+    // Resume if suspended (browser autoplay policy)
+    if (ctx.state === 'suspended') ctx.resume();
+    var osc  = ctx.createOscillator();
+    var gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type      = 'sine';
+    osc.frequency.setValueAtTime(frequency || 880, ctx.currentTime);
+    gain.gain.setValueAtTime(0.25, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + (duration || 0.18));
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + (duration || 0.18));
+  }
+
+  // Frequencies per highlight slot so each keyword has a distinct pitch
+  var _BIP_FREQS = [880, 660, 1046, 554, 784];
+
+  function _checkBip(rawText) {
+    _userHighlights.forEach(function(h, idx) {
+      if (!h.bip || h.bip === 'off') return;
+      var rx = new RegExp(_escapeRegExp(h.word), 'i');
+      if (!rx.test(rawText)) return;
+      if (h.bip === 'first') {
+        var key = h.word.toLowerCase();
+        if (_bipFired[key]) return;
+        _bipFired[key] = true;
+      }
+      _playBip(_BIP_FREQS[idx % _BIP_FREQS.length]);
+    });
+  }
+
+  // Reset 'first' fired state when log is cleared
+  function _resetBipFired() { _bipFired = {}; }
 
   // ── Public API ─────────────────────────────────────────────────
 
@@ -446,19 +520,32 @@ window.App = (function app(window, document) {
           _filterValue = '';
           _elFilterClear.classList.add('hidden');
           _setFilterParam('');
+          _saveSettings({ filter: '', regexMode: false, caseSensitive: false, invertFilter: false });
           _filterAllLogs();
           _reHighlightAll();
         });
       }
 
       if (_elRegexMode) {
-        _elRegexMode.addEventListener('change', function() { _regexMode = this.checked; _filterAllLogs(); });
+        _elRegexMode.addEventListener('change', function() {
+          _regexMode = this.checked;
+          _saveSettings({ regexMode: _regexMode });
+          _filterAllLogs();
+        });
       }
       if (_elCaseSensitive) {
-        _elCaseSensitive.addEventListener('change', function() { _caseSensitive = this.checked; _filterAllLogs(); });
+        _elCaseSensitive.addEventListener('change', function() {
+          _caseSensitive = this.checked;
+          _saveSettings({ caseSensitive: _caseSensitive });
+          _filterAllLogs();
+        });
       }
       if (_elInvertFilter) {
-        _elInvertFilter.addEventListener('change', function() { _invertFilter = this.checked; _filterAllLogs(); });
+        _elInvertFilter.addEventListener('change', function() {
+          _invertFilter = this.checked;
+          _saveSettings({ invertFilter: _invertFilter });
+          _filterAllLogs();
+        });
       }
 
       // Highlight
@@ -487,6 +574,7 @@ window.App = (function app(window, document) {
           _logContainer.innerHTML = '';
           _totalLines = _visibleLines = _errorCount = _warnCount = _lineNumber = 0;
           _updateStats();
+          _resetBipFired();
           if (_elEmptyState) _elEmptyState.classList.remove('hidden');
           _showToast('Log cleared');
         });
@@ -679,6 +767,12 @@ window.App = (function app(window, document) {
           }
         });
 
+      // Prime AudioContext on first click so autoplay policy is satisfied
+      document.addEventListener('click', function _primeAudio() {
+        _getAudioCtx();
+        document.removeEventListener('click', _primeAudio);
+      }, { once: true });
+
       _setConnStatus('connecting', 'Connecting…');
 
       // ── Restore persisted settings ──────────────────────────────
@@ -704,6 +798,28 @@ window.App = (function app(window, document) {
         _filterValue = _saved.filter;
         if (_filterInput) _filterInput.value = _filterValue;
         if (_elFilterClear) _elFilterClear.classList.toggle('hidden', !_filterValue);
+      }
+
+      // Restore filter option toggles
+      if (_saved.regexMode) {
+        _regexMode = true;
+        if (_elRegexMode) _elRegexMode.checked = true;
+      }
+      if (_saved.caseSensitive) {
+        _caseSensitive = true;
+        if (_elCaseSensitive) _elCaseSensitive.checked = true;
+      }
+      if (_saved.invertFilter) {
+        _invertFilter = true;
+        if (_elInvertFilter) _elInvertFilter.checked = true;
+      }
+
+      // Restore keyword highlights
+      if (_saved.highlights && Array.isArray(_saved.highlights) && _saved.highlights.length) {
+        _userHighlights = _saved.highlights.map(function(h) {
+          return { word: h.word, bip: h.bip || 'off' };
+        });
+        _renderHighlightTags();
       }
 
       // On mobile, sidebar defaults to collapsed; restore preference on desktop
@@ -754,6 +870,9 @@ window.App = (function app(window, document) {
       html = _applyUserHighlights(html);
       if (_filterValue) html = _applyFilterHighlight(html);
       p.innerHTML = html;
+
+      // Bip check — only for live incoming lines, not replayed from start
+      if (!replace) _checkBip(data);
 
       contentEl.appendChild(p);
       div.appendChild(numEl);
