@@ -71,6 +71,11 @@ window.App = (function app(window, document) {
   var _elLogViewport;
   var _elSidebarCollapse, _elExpandSidebar;
   var _toastContainer;
+  var _elSourceList;
+  var _elTopbarTitle;
+  var _selectedSource = null;
+  var _sources        = [];
+  var _isContainer    = false;
 
   // ── Utilities ─────────────────────────────────────────────────
 
@@ -147,9 +152,15 @@ window.App = (function app(window, document) {
     return _invertFilter ? !rx.test(text) : rx.test(text);
   }
 
+  function _sourceMatchesFilter(source) {
+    if (!_selectedSource) return true;
+    return source === _selectedSource;
+  }
+
   function _filterElement(el) {
     var text = el.getAttribute('data-raw') || el.textContent;
-    if (_lineMatchesFilter(text)) {
+    var source = el.getAttribute('data-source');
+    if (_lineMatchesFilter(text) && _sourceMatchesFilter(source)) {
       el.classList.remove('filtered-out');
       return true;
     }
@@ -267,9 +278,75 @@ window.App = (function app(window, document) {
 
   function _setSidebarCollapsed(collapsed) {
     var sidebar = document.getElementById('sidebar');
-    if (sidebar) sidebar.classList.toggle('collapsed', collapsed);
-    if (_elExpandSidebar) _elExpandSidebar.classList.toggle('hidden', !collapsed);
+    if (sidebar) {
+      sidebar.classList.toggle('collapsed', collapsed);
+      sidebar.setAttribute('aria-hidden', collapsed ? 'true' : 'false');
+    }
+    if (_elSidebarCollapse) _elSidebarCollapse.setAttribute('aria-expanded', !collapsed);
+    if (_elExpandSidebar) {
+      _elExpandSidebar.classList.toggle('hidden', !collapsed);
+      _elExpandSidebar.setAttribute('aria-expanded', !collapsed);
+    }
     _saveSettings({ sidebarCollapsed: collapsed });
+  }
+
+  // ── Source selector ─────────────────────────────────────────────
+
+  function _buildSourceSelector(sources) {
+    if (!_elSourceList || !sources || sources.length <= 1) {
+      if (_elSourceList) _elSourceList.classList.remove('has-pills');
+      return;
+    }
+    _elSourceList.classList.add('has-pills');
+    _elSourceList.innerHTML = '';
+
+    var allChip = document.createElement('button');
+    allChip.className = 'source-chip active';
+    allChip.setAttribute('data-source', '');
+    allChip.textContent = 'All';
+    allChip.addEventListener('click', function() { _setSelectedSource(null); });
+    _elSourceList.appendChild(allChip);
+
+    for (var i = 0; i < sources.length; i++) {
+      var s = sources[i];
+      var chip = document.createElement('button');
+      chip.className = 'source-chip';
+      chip.setAttribute('data-source', s.name);
+      chip.title = s.name;
+
+      var icon = document.createElement('span');
+      icon.className = 'source-chip-icon';
+      icon.innerHTML = s.type === 'container'
+        ? '<svg width="11" height="11" viewBox="0 0 12 12" fill="none"><rect x="1.5" y="0.5" width="9" height="7" rx="1.5" stroke="currentColor" stroke-width="1.1"/><rect x="3.5" y="2" width="5" height="4" rx="0.8" stroke="currentColor" stroke-width="0.8"/><circle cx="6" cy="9.5" r="1.2" stroke="currentColor" stroke-width="0.9"/></svg>'
+        : '<svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M2.5 1h4.5l2.5 2.5V10a1 1 0 01-1 1h-6a1 1 0 01-1-1V2a1 1 0 011-1z" stroke="currentColor" stroke-width="1.1" stroke-linejoin="round"/><path d="M7 1v2.5h2.5" stroke="currentColor" stroke-width="1.1" stroke-linejoin="round"/><path d="M3.5 7h5M3.5 5h5M3.5 9h3" stroke="currentColor" stroke-width="0.8" stroke-linecap="round"/></svg>';
+      chip.appendChild(icon);
+
+      var label = document.createElement('span');
+      label.className = 'source-chip-label';
+      label.textContent = s.name;
+      chip.appendChild(label);
+
+      chip.addEventListener('click', function(sourceName) {
+        return function() { _setSelectedSource(sourceName); };
+      }(s.name));
+      _elSourceList.appendChild(chip);
+    }
+  }
+
+  function _setSelectedSource(source) {
+    _selectedSource = source;
+    if (_elSourceList) {
+      var chips = _elSourceList.querySelectorAll('.source-chip');
+      for (var i = 0; i < chips.length; i++) {
+        var val = chips[i].getAttribute('data-source');
+        chips[i].classList.toggle('active', val === (source || ''));
+      }
+    }
+    if (_elTopbarTitle) {
+      _elTopbarTitle.textContent = source || (_sources.map(function(s) { return s.name; }).join(' + ') || 'frontail');
+      _elTopbarTitle.setAttribute('title', _elTopbarTitle.textContent);
+    }
+    _filterAllLogs();
   }
 
   // ── Highlight tag UI ───────────────────────────────────────────
@@ -493,6 +570,8 @@ window.App = (function app(window, document) {
       var _elModalDownload    = document.getElementById('modalDownload');
       var _elModalLoadAnyway  = document.getElementById('modalLoadAnyway');
       var _currentFileIndex   = 0;   // which file in multi-file mode
+      _elSourceList = document.getElementById('sourceList');
+      _elTopbarTitle = document.getElementById('topbarTitle');
       // _frontailPath is set by the inline <script> in index.html via __PATH__ substitution
       // Strip trailing slash; if path is exactly '/' reduce to '' so URLs don't double-slash
       var _rawPath = (window._frontailPath || '').trim();
@@ -607,7 +686,30 @@ window.App = (function app(window, document) {
 
       // ── Download helper (shared by button + modal) ───────────────
       function _triggerDownload() {
-        var href = _urlPath + '/download?file=' + _currentFileIndex;
+        var href;
+        var label;
+        if (_selectedSource && _sources) {
+          var fileIdx = 0;
+          var containerIdx = 0;
+          for (var i = 0; i < _sources.length; i++) {
+            if (_sources[i].name === _selectedSource) {
+              if (_sources[i].type === 'container') {
+                href = _urlPath + '/download?container=' + containerIdx;
+                label = 'Downloading container logs…';
+              } else {
+                href = _urlPath + '/download?file=' + fileIdx;
+                label = 'Downloading file…';
+              }
+              break;
+            }
+            if (_sources[i].type === 'container') containerIdx++;
+            else fileIdx++;
+          }
+        }
+        if (!href) {
+          href = _urlPath + '/download?file=' + _currentFileIndex;
+          label = 'Downloading file…';
+        }
         var a = document.createElement('a');
         a.href = href;
         a.setAttribute('download', '');
@@ -615,7 +717,7 @@ window.App = (function app(window, document) {
         document.body.appendChild(a);
         a.click();
         setTimeout(function() { document.body.removeChild(a); }, 200);
-        _showToast('Downloading file…');
+        _showToast(label);
       }
 
       if (_elDownloadBtn) {
@@ -656,7 +758,7 @@ window.App = (function app(window, document) {
       if (_elReadFromStartBtn) {
         _elReadFromStartBtn.addEventListener('click', function() {
           _socket.emit('read-from-start', { fileIndex: _currentFileIndex });
-          _showToast('Requesting file from beginning…');
+          _showToast('Requesting ' + (_isContainer ? 'logs' : 'file') + ' from beginning…');
         });
       }
 
@@ -738,6 +840,17 @@ window.App = (function app(window, document) {
         .on('connect_error', function() { _setConnStatus('disconnected', 'Connection error'); })
         .on('reconnecting',  function() { _setConnStatus('connecting',   'Reconnecting…'); })
         .on('options:lines', function(limit) { _linesLimit = limit; })
+        .on('options:source-info', function(info) {
+          _isContainer = !!(info && info.isContainer);
+        })
+        .on('options:sources', function(sources) {
+          _sources = sources;
+          _buildSourceSelector(sources);
+          if (_elTopbarTitle && sources.length === 1) {
+            _elTopbarTitle.textContent = sources[0].name;
+            _elTopbarTitle.setAttribute('title', sources[0].name);
+          }
+        })
         .on('options:hide-topbar', function() {
           if (_topbar) _topbar.classList.add('hide');
           if (_body) _body.classList.add('no-topbar');
@@ -754,8 +867,11 @@ window.App = (function app(window, document) {
             if (_logContainer) _logContainer.innerHTML = '';
             _totalLines = _visibleLines = _errorCount = _warnCount = _lineNumber = 0;
             _updateStats();
-            _showToast('Streaming from file beginning…');
+            _showToast('Streaming from ' + (data.isContainer ? 'container' : 'file') + ' beginning…');
           }
+        })
+        .on('read-end', function() {
+          _showToast('Finished loading historical ' + (_isContainer ? 'logs' : 'file'));
         })
         .on('line', function(line) {
           if (_isPaused) {
@@ -763,7 +879,9 @@ window.App = (function app(window, document) {
             if (_elSkippedBadge) _elSkippedBadge.classList.remove('hidden');
             if (_elSkippedCount) _elSkippedCount.textContent = _skipCounter;
           } else {
-            self.log(line);
+            var text = typeof line === 'string' ? line : line.t;
+            var source = typeof line === 'string' ? null : line.s;
+            self.log(text, source);
           }
         });
 
@@ -832,7 +950,7 @@ window.App = (function app(window, document) {
 
     },
 
-    log: function log(data, replace) {
+    log: function log(data, source, replace) {
       if (!_logContainer) return;
 
       if (_totalLines === 0 && _elEmptyState) {
@@ -844,6 +962,7 @@ window.App = (function app(window, document) {
       var div = document.createElement('div');
       div.className = 'log-line';
       div.setAttribute('data-raw', data);
+      if (source) div.setAttribute('data-source', source);
 
       var level = _detectLevel(data);
       if (level) div.classList.add('level-' + level);
@@ -887,7 +1006,7 @@ window.App = (function app(window, document) {
       if (level === 'error') _errorCount++;
       if (level === 'warn')  _warnCount++;
 
-      var visible = _lineMatchesFilter(data);
+      var visible = _lineMatchesFilter(data) && _sourceMatchesFilter(source);
       if (!visible) div.classList.add('filtered-out');
       else          _visibleLines++;
 

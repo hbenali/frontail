@@ -41,7 +41,7 @@
   },
   "scripts": {
     "lint": "eslint .",
-    "test": "mocha -r should --exit test/*.js",
+    "test": "NODE_OPTIONS='--no-deprecation' mocha -r should --exit test/*.js",
     "pkg": "pkg --out-path=dist ."
   },
   "pkg": {

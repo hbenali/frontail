@@ -27,8 +27,10 @@ docker run -d -p 9001:9001 -v /var/log:/log hbenali/frontail /log/syslog
 | Area | Change |
 |---|---|
 | **UI** | Full sidebar/main two-pane layout, JetBrains Mono log font |
+| **Containers** | Stream logs from Docker or Podman containers alongside files |
+| **Source selector** | Sidebar pills to filter by source — click a container or file to isolate its logs |
 | **Themes** | Dark, Light, Solarized — switched at runtime with correct per-theme button colours |
-| **Persistence** | Theme, word wrap, timestamps, filter, and sidebar state saved in `localStorage` |
+| **Persistence** | Theme, word wrap, timestamps, filter, sidebar state, and source selection saved in `localStorage` |
 | **Filter** | Regex mode, case-sensitive toggle, invert-filter, inline match highlighting |
 | **Highlight** | Up to 5 colour-coded keyword highlighters, applied to all existing and new lines |
 | **Stats** | Live counters for total / visible / error / warn lines |
@@ -43,6 +45,9 @@ docker run -d -p 9001:9001 -v /var/log:/log hbenali/frontail /log/syslog
 ## Features
 
 - Real-time log streaming over WebSocket
+- **Docker/Podman container log streaming** — `--container` flag, any engine
+- **Source selector** — sidebar pills to filter logs by source (files or containers)
+- **Container log download** — download full container history via browser
 - Log rotation support (Linux/macOS)
 - Auto-scroll with scroll-to-bottom FAB (shows `+N` new lines count)
 - Pause / resume stream with skip counter
@@ -92,6 +97,8 @@ Options:
   -P, --password <password>     Basic Auth password (requires -U)
   -k, --key <key.pem>           Private key for HTTPS (requires -c)
   -c, --certificate <cert.pem>  Certificate for HTTPS (requires -k)
+  -C, --container <container>   container name or id
+  --container-engine <engine>   container engine (docker, podman) (default: docker)
   --pid-path <path>             daemon PID file (default: /var/run/frontail.pid)
   --log-path <path>             daemon log file (default: /dev/null)
   --url-path <path>             URL path for browser app (default: /)
@@ -127,11 +134,19 @@ On small screens the sidebar becomes a full-screen overlay panel. Tap the **☰*
 
 ## Tailing multiple files
 
-`[file ...]` accepts multiple paths and shell glob patterns:
+`[file ...]` accepts multiple paths and shell glob patterns. Each file becomes a separate **source pill** in the sidebar:
 
 ```bash
 frontail /var/log/nginx/access.log /var/log/nginx/error.log
 frontail /var/log/*.log
+```
+
+## Mixing files and containers
+
+Files and containers can be tailed simultaneously — each appears as its own pill:
+
+```bash
+frontail /var/log/syslog --container nginx -C postgres
 ```
 
 ## stdin
@@ -141,6 +156,41 @@ Use `-` to stream stdin:
 ```bash
 ./server | frontail -
 ```
+
+## Docker/Podman container logs
+
+Stream logs from one or more containers:
+
+```bash
+frontail --container my-container
+frontail -C c1 -C c2
+```
+
+Specify container engine (default is `docker`):
+
+```bash
+frontail --container my-container --container-engine podman
+```
+
+### Downloading container logs
+
+Click a container source pill in the sidebar, then press **Download** to get the full log history as a `.log` file.
+
+### Docker setup for container streaming
+
+To stream container logs from within the frontail Docker image, mount the Docker socket:
+
+```yaml
+# docker-compose.yml
+frontail:
+  image: hbenali/frontail:2.0
+  command: --container myapp /logs/syslog
+  volumes:
+    - /var/log:/logs:ro
+    - /var/run/docker.sock:/var/run/docker.sock:ro
+```
+
+The entrypoint automatically adds the `frontail` user to the socket's group at startup.
 
 ---
 
@@ -192,14 +242,25 @@ Start frontail with `--url-path /frontail`.
 # Build
 docker build -t hbenali/frontail .
 
-# Run
+# Multi-arch build & push
+docker buildx build --platform linux/amd64,linux/arm64 \
+  -t hbenali/frontail:2.0 -t hbenali/frontail:latest --push .
+
+# Run (file only)
 docker run -d \
   -p 9001:9001 \
   -v /var/log:/log \
   hbenali/frontail /log/syslog
+
+# Run (file + container streaming)
+docker run -d \
+  -p 9001:9001 \
+  -v /var/log:/log:ro \
+  -v /var/run/docker.sock:/var/run/docker.sock:ro \
+  hbenali/frontail /log/syslog --container myapp
 ```
 
-The image uses a **multi-stage build** (Node 24 LTS on Debian Bookworm Slim) and runs as a non-root user for improved security.
+The image uses a **multi-stage build** (Node 24 LTS on Debian Bookworm Slim), includes `docker-ce-cli` for container streaming, and runs as a non-root `frontail` user. The entrypoint script adds the user to the docker group at runtime when `docker.sock` is mounted.
 
 ---
 

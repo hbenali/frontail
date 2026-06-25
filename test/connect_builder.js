@@ -90,6 +90,21 @@ describe('connectBuilder', () => {
     request(app).get('/').expect('ns', done);
   });
 
+  it('should serve container log download via /download?container=', function(done) {
+    const fixturesDir = path.join(__dirname, 'fixtures');
+    const app = connectBuilder('/')
+      .static(fixturesDir)
+      .download(
+        [],
+        { containers: ['test-container'], engine: 'docker' }
+      )
+      .build();
+
+    request(app)
+      .get('/download?container=1')
+      .expect(404, 'Container not found', done);
+  });
+
   it('should build app that sets theme', (done) => {
     const app = connectBuilder('/')
       .index(

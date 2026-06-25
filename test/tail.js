@@ -24,7 +24,8 @@ describe('tail', () => {
   it('calls event line if new line appear in file', (done) => {
     temp.open(TEMP_FILE_PROFIX, (err, info) => {
       tail(info.path).on('line', (line) => {
-        line.should.equal('line0');
+        line.should.have.property('t', 'line0');
+        line.should.have.property('s', info.path);
         done();
       });
 
@@ -40,7 +41,10 @@ describe('tail', () => {
         buffer: 2,
       });
       setTimeout(() => {
-        tailer.getBuffer().should.be.eql(['line18', 'line19']);
+        tailer.getBuffer().should.be.eql([
+          { t: 'line18', s: info.path },
+          { t: 'line19', s: info.path }
+        ]);
         done();
       }, SPAWN_DELAY);
     });

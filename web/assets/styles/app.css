@@ -220,6 +220,57 @@ body {
   min-width: 0;
 }
 
+/* ── Source selector ──────────────────────────────────────────── */
+.source-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.source-list.has-pills .file-chip {
+  display: none;
+}
+
+.source-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 4px 8px;
+  color: var(--text-secondary);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  max-width: 100%;
+}
+
+.source-chip:hover {
+  border-color: var(--accent);
+  color: var(--text-primary);
+}
+
+.source-chip.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--bg-primary);
+}
+
+.source-chip-icon {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.source-chip-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
 /* ── Stats grid ──────────────────────────────────────────────── */
 .stats-grid {
   display: grid;

@@ -20,7 +20,7 @@
   <div id="app">
 
     <!-- Sidebar -->
-    <aside id="sidebar" class="sidebar">
+    <aside id="sidebar" class="sidebar" aria-label="Sidebar" aria-hidden="false">
       <div class="sidebar-header">
         <div class="logo">
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
@@ -29,7 +29,7 @@
           </svg>
           <span class="logo-text">frontail</span>
         </div>
-        <button class="sidebar-collapse-btn" id="sidebarCollapse" title="Collapse sidebar" aria-label="Collapse sidebar">
+        <button class="sidebar-collapse-btn" id="sidebarCollapse" title="Collapse sidebar" aria-label="Collapse sidebar" aria-expanded="true" aria-controls="sidebar">
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M9 2L4 7l5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
       </div>
@@ -37,10 +37,12 @@
       <div class="sidebar-body">
 
         <div class="section">
-          <div class="section-label">Source</div>
-          <div class="file-chip">
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2 1h6l2.5 2.5V11H2V1z" stroke="currentColor" stroke-width="1.1" stroke-linejoin="round"/><path d="M8 1v2.5h2.5" stroke="currentColor" stroke-width="1.1" stroke-linejoin="round"/></svg>
-            <span id="fileTitle" title="__TITLE__">__TITLE__</span>
+          <div class="section-label">Sources</div>
+          <div class="source-list" id="sourceList">
+            <div class="file-chip">
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2 1h6l2.5 2.5V11H2V1z" stroke="currentColor" stroke-width="1.1" stroke-linejoin="round"/><path d="M8 1v2.5h2.5" stroke="currentColor" stroke-width="1.1" stroke-linejoin="round"/></svg>
+              <span id="fileTitle" title="__TITLE__">__TITLE__</span>
+            </div>
           </div>
         </div>
 
@@ -151,7 +153,7 @@
     <!-- Main log area -->
     <main id="main" class="main">
       <header class="topbar" id="topbar">
-        <button class="expand-sidebar-btn" id="expandSidebar" title="Menu / Show sidebar" aria-label="Menu">
+        <button class="expand-sidebar-btn" id="expandSidebar" title="Menu / Show sidebar" aria-label="Menu" aria-expanded="false" aria-controls="sidebar">
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M5 2L10 8l-5 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
         <div class="topbar-brand">

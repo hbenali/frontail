@@ -18,7 +18,7 @@ const usageStats = require('./lib/stats');
  * Parse args
  */
 program.parse(process.argv);
-if (program.args.length === 0) {
+if (program.args.length === 0 && program.container.length === 0) {
   console.error('Arguments needed, use --help');
   process.exit();
 }
@@ -36,7 +36,7 @@ stats.time('runtime', 'runtime');
 const doAuthorization = !!(program.user && program.password);
 const doSecure = !!(program.key && program.certificate);
 const sessionSecret = String(+new Date()) + Math.random();
-const files = program.args.join(' ');
+const files = [].concat(program.args).concat(program.container).join(' ');
 const filesNamespace = crypto.createHash('md5').update(files).digest('hex');
 const urlPath = program.urlPath.replace(/\/$/, ''); // remove trailing slash
 
@@ -56,7 +56,10 @@ if (program.daemonize) {
   }
   appBuilder
     .static(path.join(__dirname, 'web', 'assets'))
-    .download(program.args.map((f) => require('path').resolve(f)))
+    .download(
+      program.args.map((f) => require('path').resolve(f)),
+      { containers: program.container, engine: program.containerEngine }
+    )
     .index(
       path.join(__dirname, 'web', 'index.html'),
       files,
@@ -128,6 +131,8 @@ if (program.daemonize) {
    */
   const tailer = tail(program.args, {
     buffer: program.number,
+    container: program.container,
+    containerEngine: program.containerEngine,
   });
 
   // File-size threshold for warning (50 MB)
@@ -148,14 +153,37 @@ if (program.daemonize) {
       socket.emit('options:highlightConfig', highlightConfig);
     }
 
+    socket.emit('options:sources', tailer.getSources());
+
+    socket.emit('options:source-info', {
+      isContainer: !!(program.container && program.container.length > 0),
+    });
+
     tailer.getBuffer().forEach((line) => {
       socket.emit('line', line);
     });
 
-    // Client requests full file from beginning
+    tailer.getErrors().forEach((err) => {
+      socket.emit('line', { t: '[frontail] ' + err.container + ': ' + err.message, s: null });
+    });
+
+    // Client requests full file/container logs from beginning
     socket.on('read-from-start', (data) => {
       const fileIndex = (data && data.fileIndex) || 0;
       const force     = !!(data && data.force);
+      const isContainer = !!(program.container && program.container.length > 0);
+
+      if (isContainer) {
+        // For containers we don't easily know size/tooLarge beforehand without extra commands
+        // We'll just stream it
+        socket.emit('file-start-info', { size: 0, tooLarge: false, isContainer: true });
+        tailer.readFromStart(fileIndex,
+          (line) => socket.emit('line', line),
+          () => socket.emit('read-end')
+        );
+        return;
+      }
+
       const filePath  = program.args[fileIndex];
       if (!filePath) return;
 
@@ -170,20 +198,23 @@ if (program.daemonize) {
       if (tooLarge && !force) return; // client will show warning / download prompt
 
       // Stream the whole file line by line back to this socket only
-      const readline = require('readline');
-      const rl = readline.createInterface({
-        input: fs.createReadStream(filePath, { encoding: 'utf8' }),
-        crlfDelay: Infinity,
-      });
-      rl.on('line', (line) => socket.emit('line', line));
+      tailer.readFromStart(fileIndex,
+        (line) => socket.emit('line', line),
+        () => socket.emit('read-end')
+      );
     });
   });
 
+  /**
   /**
    * Send incoming data
    */
   tailer.on('line', (line) => {
     filesSocket.emit('line', line);
+  });
+
+  tailer.on('error', (err) => {
+    filesSocket.emit('line', '[frontail] ' + err.container + ': ' + err.message);
   });
 
   stats.track('runtime', 'started');
