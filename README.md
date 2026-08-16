@@ -93,6 +93,10 @@ npm i -g @hbenali/frontail
 docker run -d -p 9001:9001 -v /var/log:/log hbenali/frontail /log/syslog
 ```
 
+Standalone binaries (no Node.js required) for Linux/macOS/Windows, amd64 and arm64, are attached to every
+[GitHub Release](https://github.com/hbenali/frontail/releases/latest). macOS binaries are unsigned — Gatekeeper
+will block the first launch; run `xattr -d com.apple.quarantine ./frontail-*` (or right-click → Open) once to allow it.
+
 ---
 
 ## Usage
