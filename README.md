@@ -211,7 +211,7 @@ To stream container logs from within the frontail Docker image, mount the Docker
 ```yaml
 # docker-compose.yml
 frontail:
-  image: hbenali/frontail:2.9
+  image: hbenali/frontail:2.10
   command: --container myapp /logs/syslog
   volumes:
     - /var/log:/logs:ro
@@ -345,7 +345,7 @@ docker build -t hbenali/frontail .
 docker buildx build --platform linux/amd64,linux/arm64 \
   --build-arg FRONTAIL_VERSION=$(node -p "require('./package.json').version") \
   --build-arg FRONTAIL_REVISION=$(git rev-parse HEAD) \
-  -t hbenali/frontail:2.9 -t hbenali/frontail:latest --push .
+  -t hbenali/frontail:2.10 -t hbenali/frontail:latest --push .
 
 # Run (file only)
 docker run -d \
@@ -367,6 +367,8 @@ docker run -d \
   -v ./my-colors.json:/frontail/preset/my-colors.json:ro \
   hbenali/frontail /log/syslog --ui-colors-preset /frontail/preset/my-colors.json
 ```
+
+For more deployment shapes to try locally — Docker Compose (basic, multi-source, auth, container streaming via Docker/Podman, a real nginx reverse proxy, and more) and Kubernetes (sidecar pattern) — see [`test/compose`](test/compose) and [`test/k8s`](test/k8s).
 
 The image uses a **multi-stage build** (Node 24 LTS on Debian Bookworm Slim), includes `docker-ce-cli` for container streaming, and runs as a non-root `frontail` user. The entrypoint script adds the user to the docker group at runtime when `docker.sock` is mounted.
 
