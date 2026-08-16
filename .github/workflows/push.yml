@@ -30,6 +30,8 @@ jobs:
     permissions:
       contents: read
       packages: write
+      id-token: write
+      attestations: write
     steps:
       - uses: actions/checkout@v7
       - name: Read package version
@@ -46,11 +48,15 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - uses: docker/build-push-action@v7
+      - name: Build and push
+        id: push
+        uses: docker/build-push-action@v7
         with:
           context: .
           platforms: linux/amd64,linux/arm64
           push: true
+          provenance: true
+          sbom: true
           build-args: |
             FRONTAIL_VERSION=${{ steps.pkg.outputs.version }}
             FRONTAIL_REVISION=${{ github.sha }}
@@ -59,3 +65,17 @@ jobs:
             hbenali/frontail:latest
             ghcr.io/hbenali/frontail:${{ github.ref_name }}
             ghcr.io/hbenali/frontail:latest
+
+      - name: Attest build provenance (Docker Hub)
+        uses: actions/attest-build-provenance@v4
+        with:
+          subject-name: docker.io/hbenali/frontail
+          subject-digest: ${{ steps.push.outputs.digest }}
+          push-to-registry: true
+
+      - name: Attest build provenance (GHCR)
+        uses: actions/attest-build-provenance@v4
+        with:
+          subject-name: ghcr.io/hbenali/frontail
+          subject-digest: ${{ steps.push.outputs.digest }}
+          push-to-registry: true
