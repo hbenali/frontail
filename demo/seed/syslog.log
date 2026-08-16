@@ -1,0 +1,3 @@
+Aug 12 10:15:20 myhost sshd[1234]: Accepted publickey for user
+Aug 12 10:15:21 myhost systemd[1]: Started Session 42 of user.
+Aug 12 10:15:22 myhost kernel: eth0: link up

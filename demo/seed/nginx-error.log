@@ -1,0 +1,4 @@
+2026/08/12 10:15:20 [error] 1234#0: *1 connect() failed (111: Connection refused) while connecting to upstream
+2026/08/12 10:15:21 [warn] 1234#0: *2 upstream server temporarily disabled
+2026/08/12 10:15:22 [notice] 1234#0: signal process started
+2026/08/12 10:15:23 [crit] 1234#0: *3 SSL_do_handshake() failed

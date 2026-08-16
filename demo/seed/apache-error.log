@@ -1,0 +1,3 @@
+[Wed Aug 12 10:15:20.123456 2026] [core:error] [pid 1234] AH00126: Invalid URI in request
+[Wed Aug 12 10:15:21.123456 2026] [ssl:warn] [pid 1235] AH01909: certificate does not match server name
+[Wed Aug 12 10:15:22.123456 2026] [core:notice] [pid 1236] AH00094: Command line: httpd

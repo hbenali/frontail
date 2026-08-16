@@ -1,0 +1,18 @@
+# Demo image: extends the real frontail image with fake seed logs and a
+# background generator, so it can be deployed publicly (e.g. Render's free
+# tier) without ever touching real data.
+FROM hbenali/frontail:2.5
+
+USER root
+
+COPY demo/seed/ /frontail/demo/seed/
+COPY demo/generate-demo-logs.js /frontail/demo/generate-demo-logs.js
+COPY demo/docker-entrypoint-demo.sh /frontail/docker-entrypoint-demo.sh
+
+RUN chmod +x /frontail/docker-entrypoint-demo.sh \
+ && mkdir -p /demo \
+ && cp /frontail/demo/seed/*.log /frontail/demo/seed/*.out /demo/ \
+ && chown -R frontail:frontail /demo /frontail/demo
+
+ENTRYPOINT ["/frontail/docker-entrypoint-demo.sh"]
+CMD ["/demo/access.log", "/demo/nginx-error.log", "/demo/apache-error.log", "/demo/catalina.out", "/demo/platform.log", "/demo/syslog.log", "/demo/custom.log", "/demo/colored.log", "--disable-usage-stats", "--number", "60"]

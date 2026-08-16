@@ -1,0 +1,4 @@
+2026-08-12 10:15:20,180 | INFO  | Global AuthenticationManager configured with AuthenticationProvider bean [o.s.s.c.a.a.c.InitializeAuthenticationProviderBeanManagerConfigurer<main>]
+2026-08-12 10:15:21,201 | WARN  | Slow query detected traceId=abc123 duration=812ms
+2026-08-12 10:15:22,500 | ERROR | Something failed [worker-2] "connection refused" 10.2.3.4
+2026-08-12 10:15:23,700 | DEBUG | Cache hit ratio 0.94
