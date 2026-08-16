@@ -130,6 +130,10 @@ Options:
   --path <path>                 prefix path (default: /)
   --disable-usage-stats         disable anonymous usage statistics
   --help                        output usage information
+
+Author:  Houssem Ben Ali
+Website: https://github.com/hbenali/frontail
+Contact: contact@hbenali.ovh
 ```
 
 Web interface: **http://[host]:[port]**
