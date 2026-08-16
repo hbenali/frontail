@@ -336,12 +336,23 @@ A fully working, containerized version of this exact setup (nginx + frontail in 
 
 ## Docker
 
+Released images are published automatically by CI (multi-arch, via `buildx`) to both
+[Docker Hub](https://hub.docker.com/r/hbenali/frontail) and
+[GHCR](https://github.com/hbenali/frontail/pkgs/container/frontail) on every version tag:
+
 ```bash
-# Build
+docker pull hbenali/frontail:latest
+# or
+docker pull ghcr.io/hbenali/frontail:latest
+```
+
+```bash
+# Build locally
 docker build -t hbenali/frontail .
 
-# Multi-arch build & push (FRONTAIL_VERSION/FRONTAIL_REVISION populate the
-# image's org.opencontainers.image.* labels — see `docker inspect`)
+# Multi-arch build & push, e.g. for a manual/ad-hoc release
+# (FRONTAIL_VERSION/FRONTAIL_REVISION populate the image's
+# org.opencontainers.image.* labels — see `docker inspect`)
 docker buildx build --platform linux/amd64,linux/arm64 \
   --build-arg FRONTAIL_VERSION=$(node -p "require('./package.json').version") \
   --build-arg FRONTAIL_REVISION=$(git rev-parse HEAD) \
