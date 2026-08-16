@@ -82,6 +82,23 @@
             <label class="toggle-item"><input type="checkbox" id="caseSensitive" class="chip-check"><span class="chip">Case</span></label>
             <label class="toggle-item"><input type="checkbox" id="invertFilter" class="chip-check"><span class="chip">Invert</span></label>
           </div>
+          <div class="toggle-row level-chip-row" id="levelChips">
+            <button type="button" class="level-chip active" data-level="error">Error</button>
+            <button type="button" class="level-chip active" data-level="warn">Warn</button>
+            <button type="button" class="level-chip active" data-level="info">Info</button>
+            <button type="button" class="level-chip active" data-level="debug">Debug</button>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-label">Saved Filters</div>
+          <div class="saved-filter-list" id="savedFilterList"></div>
+          <div class="input-group" style="margin-top:8px">
+            <input type="text" class="text-input" id="savedFilterName" placeholder="Name this filter…" autocomplete="off" spellcheck="false">
+            <button class="add-btn" id="savedFilterSave" aria-label="Save current filter" title="Save current filter">
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1.5v9M1.5 6h9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+            </button>
+          </div>
         </div>
 
         <div class="section">
@@ -130,6 +147,10 @@
               <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M6.5 2v6.5M4 6l2.5 3L9 6M2 11h9" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M2 2l9 9" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
               <span>Sanitized</span>
             </button>
+            <button class="ctrl-btn" id="downloadFilteredBtn" aria-label="Download currently visible lines" title="Download only the lines currently visible (filter + level + source)">
+              <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M6.5 2v6.5M4 6l2.5 3L9 6M2 11h9" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="6.5" cy="6.5" r="5.5" stroke="currentColor" stroke-width="1" stroke-dasharray="1.5 1.5" fill="none"/></svg>
+              <span>Filtered</span>
+            </button>
           </div>
         </div>
 
@@ -151,6 +172,8 @@
         </div>
       </div>
       <div class="sidebar-copyright">
+        <span class="version-tag" title="Deployed version">v__VERSION__</span>
+        <span class="copyright-sep">·</span>
         <span>© <a href="https://www.hbenali.ovh" target="_blank" rel="noopener">hbenali</a></span>
         <span class="copyright-sep">·</span>
         <a href="https://github.com/hbenali/frontail" target="_blank" rel="noopener">GitHub</a>
@@ -174,7 +197,12 @@
             <rect x="1" y="1" width="18" height="18" rx="4" stroke="var(--accent)" stroke-width="1.5"/>
             <path d="M4.5 6.5h11M4.5 10h7M4.5 13.5h9" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round"/>
           </svg>
-          <span class="topbar-file" id="topbarTitle" title="__TITLE__">__TITLE__</span>
+          <span class="topbar-title-group">
+            <span class="topbar-title-icon" id="topbarTitleIcon" aria-hidden="true"></span>
+            <span class="topbar-file" id="topbarTitle" title="__TITLE__">__TITLE__</span>
+            <span class="topbar-count hidden" id="topbarCount"></span>
+            <span class="topbar-filtered-dot hidden" id="topbarFilteredDot" aria-label="Filter active"></span>
+          </span>
         </div>
         <div class="topbar-right">
           <div class="ansi-badge hidden" id="ansiBadge" title="This source already contains ANSI color codes — format autodetection is skipped for those lines">

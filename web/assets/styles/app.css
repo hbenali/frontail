@@ -404,6 +404,69 @@ body {
   color: var(--accent);
 }
 
+/* ── Level quick-filter chips ─────────────────────────────────── */
+.level-chip-row { margin-top: 4px }
+
+.level-chip {
+  padding: 3px 9px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 500;
+  border: 1px solid var(--border-strong);
+  color: var(--text-muted);
+  background: var(--bg-raised);
+  opacity: 0.5;
+  transition: all 0.15s;
+  cursor: pointer;
+}
+
+.level-chip.active { opacity: 1 }
+
+.level-chip[data-level="error"].active {
+  border-color: var(--error-color); color: var(--error-color); background: rgba(247,112,112,0.1);
+}
+.level-chip[data-level="warn"].active {
+  border-color: var(--warn-color); color: var(--warn-color); background: rgba(247,185,85,0.1);
+}
+.level-chip[data-level="info"].active {
+  border-color: var(--info-color); color: var(--info-color); background: rgba(85,184,247,0.1);
+}
+.level-chip[data-level="debug"].active {
+  border-color: var(--success-color); color: var(--success-color); background: rgba(106,209,158,0.1);
+}
+
+/* ── Saved filter list ────────────────────────────────────────── */
+.saved-filter-list {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.saved-filter-tag {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 4px 8px;
+  font-size: 11px;
+}
+
+.saved-filter-apply {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-secondary);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.saved-filter-apply:hover { color: var(--accent) }
+
 /* ── Highlight list ──────────────────────────────────────────── */
 .highlight-list {
   display: flex;
@@ -598,6 +661,20 @@ body {
   flex-shrink: 0;
 }
 
+.topbar-title-group {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+}
+
+.topbar-title-icon {
+  display: flex;
+  align-items: center;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
 .topbar-file {
   font-family: 'JetBrains Mono', monospace;
   font-size: 12px;
@@ -607,6 +684,20 @@ body {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.topbar-count {
+  font-size: 11px;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.topbar-filtered-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--warn-color);
+  flex-shrink: 0;
 }
 
 .topbar-right {
@@ -898,6 +989,8 @@ body {
 .log-fc-logger   { color: var(--text-secondary) }
 .log-fc-meta     { color: var(--text-muted) }
 .log-fc-str      { color: var(--success-color) }
+.log-fc-jkey     { color: var(--accent) }
+.log-fc-field    { color: var(--text-primary) }
 
 .log-fc-status-2xx { color: var(--success-color); font-weight: 600 }
 .log-fc-status-3xx { color: var(--info-color); font-weight: 600 }
@@ -1175,6 +1268,10 @@ body {
 
 .copyright-sep {
   opacity: 0.5;
+}
+
+.version-tag {
+  font-family: 'JetBrains Mono', monospace;
 }
 
 /* ── Highlight tag: bip button ───────────────────────────────── */

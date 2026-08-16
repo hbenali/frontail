@@ -13,6 +13,7 @@ const program = require('./lib/options_parser');
 const serverBuilder = require('./lib/server_builder');
 const daemonize = require('./lib/daemonize');
 const usageStats = require('./lib/stats');
+const pkg = require('./package.json');
 
 /**
  * Parse args
@@ -64,7 +65,8 @@ if (program.daemonize) {
       path.join(__dirname, 'web', 'index.html'),
       files,
       filesNamespace,
-      program.theme
+      program.theme,
+      pkg.version
     );
 
   const builder = serverBuilder();

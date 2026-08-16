@@ -62,8 +62,13 @@ docker run -d -p 9001:9001 -v /var/log:/log hbenali/frontail /log/syslog
 - Keyword highlight (up to 5 coloured keywords)
 - ANSI colour code rendering
 - **Automatic log colorizing** — autodetects apache2/nginx access & error logs, Tomcat/Catalina, Log4j/Logback, and generic syslog, colouring timestamps, IPs, HTTP methods/status codes, log levels, etc.; falls back to generic token coloring (timestamps/levels/IPs/brackets/quotes) for anything else. Enabled by default (`--ui-no-colors` to disable); skipped on lines that already carry ANSI colour codes. Extensible with your own rules via `--ui-colors-preset`
-- **ANSI-source indicator** — badge shown when the current source already streams ANSI-coloured lines
+- **JSON log line colorizing** — structured JSON-lines logs (pino, winston-json, bunyan, Go structured logging, …) are rendered as colorized `key=value` pairs instead of raw escaped JSON
+- **ANSI-source indicator** — badge shown when the current source already streams ANSI-coloured lines (per-source: `ANSI colors` / `Mixed colors` depending on what's selected)
 - **Sanitized download** — when ANSI colours are detected, an extra "Sanitized" download strips the colour codes before saving
+- **Level quick-filter chips** — toggle Error / Warn / Info / Debug on or off with one click; combines with the text filter
+- **Saved filter presets** — save the current filter (text + regex/case/invert) under a name, then reapply or delete it later
+- **Download the currently visible lines** — export exactly what's on screen (after filters, level chips, and source selection) as a `.txt` file, entirely client-side
+- **Richer topbar title** — shows a file/container icon, the basename (full path on hover), a source count when viewing "All", and a small dot whenever a filter is narrowing what you see
 - Click any line to select / deselect
 - Word wrap toggle
 - Per-line timestamps toggle
@@ -136,6 +141,18 @@ Web interface: **http://[host]:[port]**
 
 ---
 
+## Filtering
+
+Beyond the text filter (plain / regex / case-sensitive / invert), the sidebar has:
+
+- **Level chips** (Error / Warn / Info / Debug) — click to hide/show lines of that severity, detected the same way the error/warn stat counters are. Combines with the text filter (AND). Lines with no detectable level (most access logs, for instance) are never hidden by these chips.
+- **Saved filters** — type a filter, give it a name in the "Saved Filters" box, and it's remembered (with its regex/case/invert flags) for one-click reapplying later. Click the name to apply, the × to delete.
+- **Filtered download** (sidebar Controls → **Filtered**) — downloads exactly the lines currently on screen, after the text filter, level chips, and source selection are all applied, as a `.txt` file. This happens entirely in the browser (no server round-trip), so it reflects what you're looking at, not the original file.
+
+A small dot next to the topbar title appears whenever a filter (text or level) is currently narrowing what you see.
+
+---
+
 ## Mobile
 
 On small screens the sidebar becomes a full-screen overlay panel. Tap the **☰** icon in the top-left to open it, and use the **←** button inside to close it and return to the log view. Logs wrap to the window width with no horizontal scroll.
@@ -193,7 +210,7 @@ To stream container logs from within the frontail Docker image, mount the Docker
 ```yaml
 # docker-compose.yml
 frontail:
-  image: hbenali/frontail:2.6
+  image: hbenali/frontail:2.7
   command: --container myapp /logs/syslog
   volumes:
     - /var/log:/logs:ro
@@ -233,6 +250,7 @@ Two things happen per line, depending on whether it already carries ANSI escape 
 
 - **Line already has ANSI codes** (e.g. an app logging with `chalk`/`colorlog`): they're rendered as-is, and format autodetection is skipped for that line so colours don't clash. A small badge appears in the topbar, and a **Sanitized** download button appears in the sidebar controls — both scoped to whichever source(s) are currently selected: **ANSI colors** when the selected source (or, with multiple sources selected, *all* of them) has ANSI codes, **Mixed colors** when only some of the selected sources do, and hidden entirely otherwise.
 - **Plain-text line**: frontail tries to recognise the log format and colours the relevant fields — timestamps, IPs, HTTP methods/paths, status codes (2xx green, 3xx cyan, 4xx amber, 5xx red), thread/pid, and log level. Recognised formats:
+  - JSON-lines (any line that parses as a single JSON object — pino, winston-json, bunyan, structured logging, …) — rendered as colorized `key=value` pairs, with `level`/`time`/`status`/`ip`-ish keys auto-classed
   - Apache2 / Nginx combined & common access logs
   - Apache2 error log (classic and `[core:error]`/`[pid N]` styles)
   - Nginx error log
@@ -321,7 +339,7 @@ docker build -t hbenali/frontail .
 
 # Multi-arch build & push
 docker buildx build --platform linux/amd64,linux/arm64 \
-  -t hbenali/frontail:2.6 -t hbenali/frontail:latest --push .
+  -t hbenali/frontail:2.7 -t hbenali/frontail:latest --push .
 
 # Run (file only)
 docker run -d \

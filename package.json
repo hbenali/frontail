@@ -1,6 +1,6 @@
 {
   "name": "frontail",
-  "version": "2.6.0",
+  "version": "2.7.0",
   "description": "streaming logs to the browser",
   "homepage": "https://github.com/hbenali/frontail",
   "author": "Houssem eXo <hbenali@exoplatform.com>",
@@ -75,6 +75,30 @@
     "ignorePatterns": [
       "web/assets/tinycon.min.js",
       "web/assets/ansi_up.js"
+    ],
+    "overrides": [
+      {
+        "files": ["web/assets/app.js"],
+        "env": {
+          "node": false,
+          "browser": true
+        },
+        "rules": {
+          "no-var": "off",
+          "vars-on-top": "off",
+          "one-var": "off",
+          "prefer-const": "off",
+          "prefer-template": "off",
+          "func-names": "off",
+          "no-plusplus": "off",
+          "no-underscore-dangle": "off",
+          "no-param-reassign": "off",
+          "consistent-return": "off",
+          "no-use-before-define": "off",
+          "no-continue": "off",
+          "no-restricted-syntax": "off"
+        }
+      }
     ]
   },
   "prettier": {
