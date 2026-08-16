@@ -1,7 +1,7 @@
 # Demo image: extends the real frontail image with fake seed logs and a
 # background generator, so it can be deployed publicly (e.g. Render's free
 # tier) without ever touching real data.
-FROM hbenali/frontail:2.5
+FROM hbenali/frontail:latest
 
 USER root
 
