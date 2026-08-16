@@ -1163,6 +1163,16 @@ body {
   color: var(--accent);
 }
 
+.sponsor-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.sponsor-link:hover {
+  color: #ea4aaa !important;
+}
+
 .copyright-sep {
   opacity: 0.5;
 }

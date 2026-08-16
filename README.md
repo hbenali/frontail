@@ -1,5 +1,7 @@
 # frontail — streaming logs to the browser
 
+[![Sponsor](https://img.shields.io/badge/Sponsor-%E2%9D%A4-ea4aaa?logo=githubsponsors&logoColor=white)](https://github.com/sponsors/hbenali)
+
 > **This repository is a fork of [mthenw/frontail](https://github.com/mthenw/frontail) by [@hbenali](https://github.com/hbenali), extended with a modernised UI, richer features, and an updated Docker base image.**
 
 `frontail` is a Node.js application that streams log files to the browser — `tail -F` with a UI. Point it at any file (or stdin) and watch lines appear in real time.
@@ -188,7 +190,7 @@ To stream container logs from within the frontail Docker image, mount the Docker
 ```yaml
 # docker-compose.yml
 frontail:
-  image: hbenali/frontail:2.4
+  image: hbenali/frontail:2.5
   command: --container myapp /logs/syslog
   volumes:
     - /var/log:/logs:ro
@@ -220,6 +222,8 @@ Available presets: `default`, `npmlog`, `python`.
 
 ## Log colorizing
 
+![Colorized apache2 access log](docs/screenshots/overview.png)
+
 Enabled by default — pass `--ui-no-colors` to turn it off server-wide. Each viewer can also flip the **Colors** button in the sidebar; that per-browser choice is saved and overrides the server default.
 
 Two things happen per line, depending on whether it already carries ANSI escape codes:
@@ -237,9 +241,24 @@ Two things happen per line, depending on whether it already carries ANSI escape 
 
 Turning colors off also falls back to plain text for ANSI-coloured sources (no `ansi_to_html`), useful when a source's colours are noisy or clash with your theme.
 
+### Screenshots by format
+
+Each rule colours only the fields it recognises — timestamps, levels, status codes, etc. — leaving the rest of the message untouched, the same way a real `catalina.out` viewer would:
+
+| Format | Example |
+|---|---|
+| Nginx error log | ![Nginx error log](docs/screenshots/nginx-error.png) |
+| Apache2 error log | ![Apache2 error log](docs/screenshots/apache-error.png) |
+| Tomcat/Catalina (`catalina.out`) | ![Tomcat catalina.out](docs/screenshots/catalina.png) |
+| Log4j/Logback pipe-delimited | ![Log4j/Logback pipe format](docs/screenshots/log4j-logback.png) |
+| Generic syslog | ![Syslog](docs/screenshots/syslog.png) |
+| Anything else (generic fallback) | ![Unstructured log with generic fallback coloring](docs/screenshots/generic-fallback.png) |
+
 ### Sanitized download
 
-If a source contains ANSI codes, the sidebar shows a **Sanitized** download button alongside the normal **Download** button. It streams the same file/container log through `/download?...&sanitize=1`, which strips ANSI escape sequences line-by-line server-side before sending it — handy for pasting logs elsewhere without stray escape codes.
+If a source contains ANSI codes, the sidebar shows a **Sanitized** download button alongside the normal **Download** button, and a badge marks the source as already colorized. It streams the same file/container log through `/download?...&sanitize=1`, which strips ANSI escape sequences line-by-line server-side before sending it — handy for pasting logs elsewhere without stray escape codes.
+
+![ANSI-colored source with Sanitized download available](docs/screenshots/ansi-source.png)
 
 ### Customizing: your own format rules
 
@@ -299,7 +318,7 @@ docker build -t hbenali/frontail .
 
 # Multi-arch build & push
 docker buildx build --platform linux/amd64,linux/arm64 \
-  -t hbenali/frontail:2.4 -t hbenali/frontail:latest --push .
+  -t hbenali/frontail:2.5 -t hbenali/frontail:latest --push .
 
 # Run (file only)
 docker run -d \
@@ -330,6 +349,8 @@ The image uses a **multi-stage build** (Node 24 LTS on Debian Bookworm Slim), in
 
 - Original project: **[mthenw/frontail](https://github.com/mthenw/frontail)** by Maciej Winnicki
 - This fork maintained by **[@hbenali](https://github.com/hbenali)**
+
+If this fork is useful to you, consider [sponsoring @hbenali on GitHub](https://github.com/sponsors/hbenali).
 
 ## License
 
