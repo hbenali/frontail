@@ -74,7 +74,7 @@ function platformLine(d) {
     'Global AuthenticationManager configured with AuthenticationProvider bean [o.s.s.c.a.a.c.InitializeAuthenticationProviderBeanManagerConfigurer<main>]',
     `Slow query detected traceId=${Math.random().toString(16).slice(2, 8)} duration=${Math.floor(Math.random() * 999)}ms`,
     `Something failed [worker-${Math.ceil(Math.random() * 4)}] "connection refused" ${randomIp()}`,
-    'Cache hit ratio ' + (Math.random()).toFixed(2),
+    `Cache hit ratio ${Math.random().toFixed(2)}`,
   ];
   return `${date} | ${levels[Math.floor(Math.random() * levels.length)].padEnd(5)} | ${pick(msgs)}`;
 }
@@ -102,9 +102,9 @@ function customLine(d) {
 function coloredLine() {
   const variants = [
     '\x1b[32mINFO\x1b[0m  Server started successfully on port 8080',
-    '\x1b[33mWARN\x1b[0m  Disk usage at ' + (70 + Math.floor(Math.random() * 30)) + '%',
+    `\x1b[33mWARN\x1b[0m  Disk usage at ${70 + Math.floor(Math.random() * 30)}%`,
     '\x1b[31mERROR\x1b[0m Failed to connect to database',
-    '\x1b[36mDEBUG\x1b[0m Cache refreshed in ' + Math.floor(Math.random() * 200) + 'ms',
+    `\x1b[36mDEBUG\x1b[0m Cache refreshed in ${Math.floor(Math.random() * 200)}ms`,
   ];
   return pick(variants);
 }
@@ -123,7 +123,7 @@ const FILES = [
 function tick() {
   const file = pick(FILES);
   const line = file.gen(new Date());
-  fs.appendFile(path.join(DIR, file.name), line + '\n', () => {});
+  fs.appendFile(path.join(DIR, file.name), `${line}\n`, () => {});
   const next = MIN_INTERVAL_MS + Math.random() * (MAX_INTERVAL_MS - MIN_INTERVAL_MS);
   setTimeout(tick, next);
 }

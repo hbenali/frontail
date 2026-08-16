@@ -193,7 +193,7 @@ To stream container logs from within the frontail Docker image, mount the Docker
 ```yaml
 # docker-compose.yml
 frontail:
-  image: hbenali/frontail:2.5
+  image: hbenali/frontail:2.6
   command: --container myapp /logs/syslog
   volumes:
     - /var/log:/logs:ro
@@ -231,7 +231,7 @@ Enabled by default — pass `--ui-no-colors` to turn it off server-wide. Each vi
 
 Two things happen per line, depending on whether it already carries ANSI escape codes:
 
-- **Line already has ANSI codes** (e.g. an app logging with `chalk`/`colorlog`): they're rendered as-is, and format autodetection is skipped for that line so colours don't clash. A small **ANSI colors** badge appears in the topbar the first time this is seen, and a **Sanitized** download button appears in the sidebar controls.
+- **Line already has ANSI codes** (e.g. an app logging with `chalk`/`colorlog`): they're rendered as-is, and format autodetection is skipped for that line so colours don't clash. A small badge appears in the topbar, and a **Sanitized** download button appears in the sidebar controls — both scoped to whichever source(s) are currently selected: **ANSI colors** when the selected source (or, with multiple sources selected, *all* of them) has ANSI codes, **Mixed colors** when only some of the selected sources do, and hidden entirely otherwise.
 - **Plain-text line**: frontail tries to recognise the log format and colours the relevant fields — timestamps, IPs, HTTP methods/paths, status codes (2xx green, 3xx cyan, 4xx amber, 5xx red), thread/pid, and log level. Recognised formats:
   - Apache2 / Nginx combined & common access logs
   - Apache2 error log (classic and `[core:error]`/`[pid N]` styles)
@@ -321,7 +321,7 @@ docker build -t hbenali/frontail .
 
 # Multi-arch build & push
 docker buildx build --platform linux/amd64,linux/arm64 \
-  -t hbenali/frontail:2.5 -t hbenali/frontail:latest --push .
+  -t hbenali/frontail:2.6 -t hbenali/frontail:latest --push .
 
 # Run (file only)
 docker run -d \

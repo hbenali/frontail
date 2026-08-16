@@ -34,7 +34,7 @@ window.App = (function app(window, document) {
   var _userHighlights  = [];
   var _colorsEnabled   = true;
   var _colorsServerDefault = true;
-  var _ansiDetected    = false;
+  var _ansiSources     = {};
 
   var _highlightCssClasses = [
     'kw-highlight-0','kw-highlight-1','kw-highlight-2',
@@ -440,11 +440,31 @@ window.App = (function app(window, document) {
   }
 
   // ── ANSI indicator ──────────────────────────────────────────────
+  // Tracked per source name, so the badge/Sanitized button reflect
+  // whichever source(s) are currently in view — not just "seen once, ever".
 
-  function _onAnsiDetected() {
-    if (_elAnsiBadge) _elAnsiBadge.classList.remove('hidden');
-    if (_elDownloadSanitizedBtn) _elDownloadSanitizedBtn.classList.remove('hidden');
-    _showToast('Source already contains ANSI colors — autodetected format colorizing skipped for those lines');
+  function _ansiIndicatorState() {
+    var names = (_sources && _sources.length) ? _sources.map(function(s) { return s.name; }) : Object.keys(_ansiSources);
+    if (_selectedSource) return _ansiSources[_selectedSource] ? 'all' : 'none';
+    if (!names.length) return 'none';
+    var withAnsi = names.filter(function(n) { return _ansiSources[n]; }).length;
+    if (withAnsi === 0) return 'none';
+    return withAnsi === names.length ? 'all' : 'mixed';
+  }
+
+  function _updateAnsiIndicator() {
+    var state = _ansiIndicatorState();
+    if (_elAnsiBadge) {
+      _elAnsiBadge.classList.toggle('hidden', state === 'none');
+      _elAnsiBadge.textContent = state === 'mixed' ? 'Mixed colors' : 'ANSI colors';
+    }
+    if (_elDownloadSanitizedBtn) _elDownloadSanitizedBtn.classList.toggle('hidden', state === 'none');
+  }
+
+  function _onAnsiDetected(source) {
+    _ansiSources[source] = true;
+    _updateAnsiIndicator();
+    _showToast((source ? '"' + source + '"' : 'Source') + ' already contains ANSI colors — autodetected format colorizing skipped for those lines');
   }
 
   // ── Scroll ─────────────────────────────────────────────────────
@@ -538,6 +558,7 @@ window.App = (function app(window, document) {
       _elTopbarTitle.textContent = source || (_sources.map(function(s) { return s.name; }).join(' + ') || 'frontail');
       _elTopbarTitle.setAttribute('title', _elTopbarTitle.textContent);
     }
+    _updateAnsiIndicator();
     _filterAllLogs();
   }
 
@@ -1062,6 +1083,7 @@ window.App = (function app(window, document) {
         .on('options:sources', function(sources) {
           _sources = sources;
           _buildSourceSelector(sources);
+          _updateAnsiIndicator();
           if (_elTopbarTitle && sources.length === 1) {
             _elTopbarTitle.textContent = sources[0].name;
             _elTopbarTitle.setAttribute('title', sources[0].name);
@@ -1226,9 +1248,8 @@ window.App = (function app(window, document) {
       if (_filterValue) html = _applyFilterHighlight(html);
       p.innerHTML = html;
 
-      if (colorized.hasAnsi && !_ansiDetected) {
-        _ansiDetected = true;
-        _onAnsiDetected();
+      if (colorized.hasAnsi && source && !_ansiSources[source]) {
+        _onAnsiDetected(source);
       }
 
       // Bip check — only for live incoming lines, not replayed from start
