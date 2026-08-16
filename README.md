@@ -14,7 +14,7 @@
 ## Quick start
 
 ```bash
-npm i frontail -g
+npm i -g @hbenali/frontail
 frontail /var/log/syslog
 # open http://127.0.0.1:9001
 ```
@@ -86,7 +86,7 @@ docker run -d -p 9001:9001 -v /var/log:/log hbenali/frontail /log/syslog
 
 ```bash
 # npm (global)
-npm i frontail -g
+npm i -g @hbenali/frontail
 
 # Docker
 docker run -d -p 9001:9001 -v /var/log:/log hbenali/frontail /log/syslog
@@ -211,7 +211,7 @@ To stream container logs from within the frontail Docker image, mount the Docker
 ```yaml
 # docker-compose.yml
 frontail:
-  image: hbenali/frontail:2.14
+  image: hbenali/frontail:2.15
   command: --container myapp /logs/syslog
   volumes:
     - /var/log:/logs:ro
@@ -345,7 +345,7 @@ docker build -t hbenali/frontail .
 docker buildx build --platform linux/amd64,linux/arm64 \
   --build-arg FRONTAIL_VERSION=$(node -p "require('./package.json').version") \
   --build-arg FRONTAIL_REVISION=$(git rev-parse HEAD) \
-  -t hbenali/frontail:2.14 -t hbenali/frontail:latest --push .
+  -t hbenali/frontail:2.15 -t hbenali/frontail:latest --push .
 
 # Run (file only)
 docker run -d \
