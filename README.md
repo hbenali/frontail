@@ -1,5 +1,6 @@
 # frontail — streaming logs to the browser
 
+[![Build, Lint, Test, and Publish](https://github.com/hbenali/frontail/actions/workflows/push.yml/badge.svg)](https://github.com/hbenali/frontail/actions/workflows/push.yml)
 [![Sponsor](https://img.shields.io/badge/Sponsor-%E2%9D%A4-ea4aaa?logo=githubsponsors&logoColor=white)](https://github.com/sponsors/hbenali)
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-frontail.hbenali.ovh-4f8ef7)](https://frontail.hbenali.ovh/)
 
