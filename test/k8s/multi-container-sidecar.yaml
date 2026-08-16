@@ -1,0 +1,89 @@
+# Two app containers, each writing their own log file into the same
+# shared volume; frontail tails both as separate sources (source
+# selector pills) - a realistic "web + worker in one Pod" shape.
+#
+#   kubectl apply -f multi-container-sidecar.yaml
+#   kubectl port-forward svc/frontail-multi-demo 9001:9001
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: frontail-multi-demo-scripts
+data:
+  web.sh: |
+    #!/bin/sh
+    i=0
+    while true; do
+      echo "$(date -Iseconds) web request $i -> 200" >> /var/log/app/web.log
+      i=$((i + 1))
+      sleep 2
+    done
+  worker.sh: |
+    #!/bin/sh
+    i=0
+    while true; do
+      echo "$(date -Iseconds) worker job $i completed" >> /var/log/app/worker.log
+      i=$((i + 1))
+      sleep 3
+    done
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontail-multi-demo
+  labels:
+    app: frontail-multi-demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: frontail-multi-demo
+  template:
+    metadata:
+      labels:
+        app: frontail-multi-demo
+    spec:
+      volumes:
+        - name: log-data
+          emptyDir: {}
+        - name: scripts
+          configMap:
+            name: frontail-multi-demo-scripts
+            defaultMode: 0755
+      containers:
+        - name: web
+          image: busybox
+          command: ["/scripts/web.sh"]
+          volumeMounts:
+            - name: log-data
+              mountPath: /var/log/app
+            - name: scripts
+              mountPath: /scripts
+        - name: worker
+          image: busybox
+          command: ["/scripts/worker.sh"]
+          volumeMounts:
+            - name: log-data
+              mountPath: /var/log/app
+            - name: scripts
+              mountPath: /scripts
+        - name: frontail
+          image: hbenali/frontail:latest
+          args: ["/var/log/app/web.log", "/var/log/app/worker.log"]
+          ports:
+            - containerPort: 9001
+          volumeMounts:
+            - name: log-data
+              mountPath: /var/log/app
+              readOnly: true
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontail-multi-demo
+spec:
+  selector:
+    app: frontail-multi-demo
+  ports:
+    - port: 9001
+      targetPort: 9001
+  type: ClusterIP

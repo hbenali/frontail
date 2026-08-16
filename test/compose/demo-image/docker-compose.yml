@@ -1,0 +1,11 @@
+# Runs the actual public-demo image (Dockerfile.demo) - the same one
+# deployed to frontail.hbenali.ovh. Seeds itself and generates fake lines
+# continuously; no volumes needed. Verify: 9 sources appear (including
+# json.log and colored.log) and keep growing on their own.
+services:
+  frontail-demo:
+    build:
+      context: ../../..
+      dockerfile: Dockerfile.demo
+    ports:
+      - "9001:9001"

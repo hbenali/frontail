@@ -1,0 +1,14 @@
+# Serves the app under a path prefix (--url-path), as if sitting behind a
+# reverse proxy that only forwards /logs/* to this container. Verify:
+# http://localhost:9001/ -> 404, http://localhost:9001/logs/ -> the app,
+# and assets/socket.io load from under /logs/ too.
+services:
+  frontail:
+    build:
+      context: ../../..
+      dockerfile: Dockerfile
+    ports:
+      - "9001:9001"
+    volumes:
+      - ./sample.log:/log/sample.log:ro
+    command: ["/log/sample.log", "--url-path", "/logs"]

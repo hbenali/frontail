@@ -1,0 +1,12 @@
+# Basic auth (-U/-P). Verify: `curl -I http://localhost:9001` -> 401,
+# `curl -I -u admin:hunter2 http://localhost:9001` -> 200.
+services:
+  frontail:
+    build:
+      context: ../../..
+      dockerfile: Dockerfile
+    ports:
+      - "9001:9001"
+    volumes:
+      - ./sample.log:/log/sample.log:ro
+    command: ["/log/sample.log", "-U", "admin", "-P", "hunter2"]

@@ -1,0 +1,14 @@
+# Custom --ui-colors-preset rules layered on top of the built-in log4j
+# format rule. Verify: the traceId=... value is colored purple (from the
+# preset), while timestamp/level still come from the built-in rule.
+services:
+  frontail:
+    build:
+      context: ../../..
+      dockerfile: Dockerfile
+    ports:
+      - "9001:9001"
+    volumes:
+      - ./platform.log:/log/platform.log:ro
+      - ../../../preset/colors-example.json:/frontail/preset/colors-example.json:ro
+    command: ["/log/platform.log", "--ui-colors-preset", "/frontail/preset/colors-example.json"]

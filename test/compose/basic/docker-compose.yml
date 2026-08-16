@@ -1,0 +1,13 @@
+# Simplest possible scenario: tail a single file with all defaults
+# (this is what most people run first). Verify: open http://localhost:9001
+# and see sample.log streaming with default log-colorizing on.
+services:
+  frontail:
+    build:
+      context: ../../..
+      dockerfile: Dockerfile
+    ports:
+      - "9001:9001"
+    volumes:
+      - ./sample.log:/log/sample.log:ro
+    command: ["/log/sample.log"]

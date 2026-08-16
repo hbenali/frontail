@@ -1,0 +1,14 @@
+# Multiple files as separate sources - exercises the sidebar source
+# selector ("All" pill + per-file pills) and the per-source ANSI/format
+# detection. Verify: two source pills exist, clicking one filters to it.
+services:
+  frontail:
+    build:
+      context: ../../..
+      dockerfile: Dockerfile
+    ports:
+      - "9001:9001"
+    volumes:
+      - ./access.log:/log/access.log:ro
+      - ./app.log:/log/app.log:ro
+    command: ["/log/access.log", "/log/app.log"]

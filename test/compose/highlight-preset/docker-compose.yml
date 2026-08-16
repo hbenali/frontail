@@ -1,0 +1,13 @@
+# --ui-highlight with the default preset (preset/default.json), which
+# highlights the word "err" and bolds any line containing it. Verify:
+# "err" is colored red and its lines are bold.
+services:
+  frontail:
+    build:
+      context: ../../..
+      dockerfile: Dockerfile
+    ports:
+      - "9001:9001"
+    volumes:
+      - ./sample.log:/log/sample.log:ro
+    command: ["/log/sample.log", "--ui-highlight"]

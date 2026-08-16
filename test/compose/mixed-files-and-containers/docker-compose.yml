@@ -1,0 +1,20 @@
+# A file and a container tailed simultaneously - each shows up as its
+# own source pill alongside the other.
+services:
+  chatty:
+    image: busybox
+    container_name: frontail-test-mixed-chatty
+    command: ["sh", "-c", "i=0; while true; do echo \"container tick $$i\"; i=$$((i+1)); sleep 2; done"]
+
+  frontail:
+    build:
+      context: ../../..
+      dockerfile: Dockerfile
+    ports:
+      - "9001:9001"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./app.log:/log/app.log:ro
+    command: ["/log/app.log", "--container", "frontail-test-mixed-chatty"]
+    depends_on:
+      - chatty

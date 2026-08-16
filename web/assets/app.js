@@ -598,8 +598,8 @@ window.App = (function app(window, document) {
     if (_highlightConfig && _highlightConfig.words) {
       Object.keys(_highlightConfig.words).forEach(function(w) {
         out = out.replace(
-          new RegExp(_escapeRegExp(w), 'g'),
-          '<span style="' + _highlightConfig.words[w] + '">' + w + '</span>'
+          new RegExp('(?![^<]*>)(' + _escapeRegExp(w) + ')', 'g'),
+          '<span style="' + _highlightConfig.words[w] + '">$1</span>'
         );
       });
     }

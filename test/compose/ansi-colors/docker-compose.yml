@@ -1,0 +1,14 @@
+# A source that already emits ANSI color codes. Verify: the topbar shows
+# the "ANSI colors" badge, format autodetection is skipped for these
+# lines (colors render as-is), and a "Sanitized" download button appears
+# in the sidebar controls.
+services:
+  frontail:
+    build:
+      context: ../../..
+      dockerfile: Dockerfile
+    ports:
+      - "9001:9001"
+    volumes:
+      - ./sample.log:/log/sample.log:ro
+    command: ["/log/sample.log"]

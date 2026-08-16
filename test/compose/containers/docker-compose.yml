@@ -1,0 +1,20 @@
+# Container log streaming via the host's Docker socket (--container).
+# Verify: a "chatty" source pill appears and shows lines from the
+# companion container, without any file being tailed.
+services:
+  chatty:
+    image: busybox
+    container_name: frontail-test-chatty
+    command: ["sh", "-c", "i=0; while true; do echo \"tick $$i $(date -Iseconds)\"; i=$$((i+1)); sleep 2; done"]
+
+  frontail:
+    build:
+      context: ../../..
+      dockerfile: Dockerfile
+    ports:
+      - "9001:9001"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    command: ["--container", "frontail-test-chatty"]
+    depends_on:
+      - chatty

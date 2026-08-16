@@ -1,0 +1,24 @@
+# frontail running behind an nginx reverse proxy under a path prefix,
+# matching the README's "Running behind nginx" example. frontail's own
+# port isn't published to the host - only nginx is. Verify:
+# http://localhost:8080/frontail -> the app, WebSocket connects (LIVE),
+# and http://localhost:8080/ (no prefix) -> nginx 404.
+services:
+  frontail:
+    build:
+      context: ../../..
+      dockerfile: Dockerfile
+    volumes:
+      - ./sample.log:/log/sample.log:ro
+    command: ["/log/sample.log", "--url-path", "/frontail"]
+    expose:
+      - "9001"
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - frontail

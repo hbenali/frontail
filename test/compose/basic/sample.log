@@ -1,0 +1,4 @@
+2026-08-16 09:00:00 app started
+2026-08-16 09:00:01 listening on port 3000
+2026-08-16 09:00:02 request GET /health -> 200
+2026-08-16 09:00:03 request GET /missing -> 404

@@ -330,6 +330,8 @@ http {
 
 Start frontail with `--url-path /frontail`.
 
+A fully working, containerized version of this exact setup (nginx + frontail in Docker Compose, path prefix included) lives at [`test/compose/reverse-proxy`](test/compose/reverse-proxy) — run `docker compose up --build` there and open `http://localhost:8080/frontail`.
+
 ---
 
 ## Docker

@@ -1,0 +1,3 @@
+2026-08-16 09:00:00,100 | INFO  | worker started
+2026-08-16 09:00:01,200 | WARN  | queue depth high
+2026-08-16 09:00:02,300 | ERROR | job failed [worker-1]

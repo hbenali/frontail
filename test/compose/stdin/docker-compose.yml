@@ -1,0 +1,14 @@
+# Streams via stdin (`frontail -`) instead of a file path. Verify: the
+# lines from sample.log appear, and the sidebar shows "stdin" as the source.
+services:
+  frontail:
+    build:
+      context: ../../..
+      dockerfile: Dockerfile
+    ports:
+      - "9001:9001"
+    volumes:
+      - ./sample.log:/log/sample.log:ro
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - "tail -F /log/sample.log | gosu frontail ./bin/frontail -"

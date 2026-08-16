@@ -1,0 +1,29 @@
+# Container log streaming via Podman instead of Docker
+# (--container-engine podman).
+#
+# Prerequisites on the host:
+#   systemctl --user enable --now podman.socket
+#
+# Must be run with Podman as the orchestrator too (not `docker compose`),
+# so the "chatty" companion container is actually created by Podman and
+# visible to frontail's `podman logs` call over the mounted socket:
+#   PODMAN_SOCK=${XDG_RUNTIME_DIR:-/run/user/1000}/podman/podman.sock \
+#     podman compose up --build
+services:
+  chatty:
+    image: busybox
+    container_name: frontail-test-chatty-podman
+    command: ["sh", "-c", "i=0; while true; do echo \"tick $$i $(date -Iseconds)\"; i=$$((i+1)); sleep 2; done"]
+
+  frontail:
+    build:
+      context: .
+    ports:
+      - "9001:9001"
+    volumes:
+      - ${PODMAN_SOCK:-/run/user/1000/podman/podman.sock}:/var/run/docker.sock:ro
+    environment:
+      - CONTAINER_HOST=unix:///var/run/docker.sock
+    command: ["--container", "frontail-test-chatty-podman", "--container-engine", "podman"]
+    depends_on:
+      - chatty

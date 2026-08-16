@@ -1,0 +1,3 @@
+2026-08-16 09:00:00,100 | INFO  | Global AuthenticationManager configured
+2026-08-16 09:00:01,200 | WARN  | Slow query detected traceId=abc123 duration=812ms
+2026-08-16 09:00:02,300 | ERROR | Something failed [worker-2] "connection refused" 10.2.3.4

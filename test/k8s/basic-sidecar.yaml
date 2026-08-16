@@ -1,0 +1,79 @@
+# Kubernetes has no docker.sock equivalent, so --container isn't
+# applicable there. The idiomatic pattern instead: run frontail as a
+# sidecar container in the same Pod as your app, sharing an emptyDir
+# volume that the app writes its log file into.
+#
+# Try it:
+#   kubectl apply -f basic-sidecar.yaml
+#   kubectl port-forward svc/frontail-sidecar-demo 9001:9001
+#   open http://localhost:9001
+#
+# Clean up:
+#   kubectl delete -f basic-sidecar.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: frontail-sidecar-demo-script
+data:
+  write-logs.sh: |
+    #!/bin/sh
+    i=0
+    while true; do
+      echo "$(date -Iseconds) tick $i" >> /var/log/app/app.log
+      i=$((i + 1))
+      sleep 2
+    done
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontail-sidecar-demo
+  labels:
+    app: frontail-sidecar-demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: frontail-sidecar-demo
+  template:
+    metadata:
+      labels:
+        app: frontail-sidecar-demo
+    spec:
+      volumes:
+        - name: log-data
+          emptyDir: {}
+        - name: script
+          configMap:
+            name: frontail-sidecar-demo-script
+            defaultMode: 0755
+      containers:
+        - name: app
+          image: busybox
+          command: ["/scripts/write-logs.sh"]
+          volumeMounts:
+            - name: log-data
+              mountPath: /var/log/app
+            - name: script
+              mountPath: /scripts
+        - name: frontail
+          image: hbenali/frontail:latest
+          args: ["/var/log/app/app.log"]
+          ports:
+            - containerPort: 9001
+          volumeMounts:
+            - name: log-data
+              mountPath: /var/log/app
+              readOnly: true
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontail-sidecar-demo
+spec:
+  selector:
+    app: frontail-sidecar-demo
+  ports:
+    - port: 9001
+      targetPort: 9001
+  type: ClusterIP

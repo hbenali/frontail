@@ -1,0 +1,97 @@
+# Same sidecar pattern, but frontail is gated with -U/-P sourced from a
+# Secret rather than hardcoded (frontail's CLI takes them as flags, so a
+# small shell wrapper reads the env vars the Secret provides).
+#
+#   kubectl apply -f with-basic-auth.yaml
+#   kubectl port-forward svc/frontail-auth-demo 9001:9001
+#   curl -I http://localhost:9001          # -> 401
+#   curl -I -u admin:hunter2 http://localhost:9001  # -> 200
+apiVersion: v1
+kind: Secret
+metadata:
+  name: frontail-auth-demo-creds
+type: Opaque
+stringData:
+  username: admin
+  password: hunter2
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: frontail-auth-demo-script
+data:
+  write-logs.sh: |
+    #!/bin/sh
+    i=0
+    while true; do
+      echo "$(date -Iseconds) tick $i" >> /var/log/app/app.log
+      i=$((i + 1))
+      sleep 2
+    done
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontail-auth-demo
+  labels:
+    app: frontail-auth-demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: frontail-auth-demo
+  template:
+    metadata:
+      labels:
+        app: frontail-auth-demo
+    spec:
+      volumes:
+        - name: log-data
+          emptyDir: {}
+        - name: script
+          configMap:
+            name: frontail-auth-demo-script
+            defaultMode: 0755
+      containers:
+        - name: app
+          image: busybox
+          command: ["/scripts/write-logs.sh"]
+          volumeMounts:
+            - name: log-data
+              mountPath: /var/log/app
+            - name: script
+              mountPath: /scripts
+        - name: frontail
+          image: hbenali/frontail:latest
+          command: ["sh", "-c"]
+          args:
+            - "gosu frontail ./bin/frontail /var/log/app/app.log -U \"$FRONTAIL_USER\" -P \"$FRONTAIL_PASS\""
+          env:
+            - name: FRONTAIL_USER
+              valueFrom:
+                secretKeyRef:
+                  name: frontail-auth-demo-creds
+                  key: username
+            - name: FRONTAIL_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: frontail-auth-demo-creds
+                  key: password
+          ports:
+            - containerPort: 9001
+          volumeMounts:
+            - name: log-data
+              mountPath: /var/log/app
+              readOnly: true
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontail-auth-demo
+spec:
+  selector:
+    app: frontail-auth-demo
+  ports:
+    - port: 9001
+      targetPort: 9001
+  type: ClusterIP

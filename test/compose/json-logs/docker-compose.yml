@@ -1,0 +1,13 @@
+# Structured JSON-lines logs. Verify: the first 3 lines render as
+# colorized key=value pairs (level/time/status/ip auto-classed), and the
+# last (invalid-JSON) line falls through to the generic fallback colorizer.
+services:
+  frontail:
+    build:
+      context: ../../..
+      dockerfile: Dockerfile
+    ports:
+      - "9001:9001"
+    volumes:
+      - ./app.log:/log/app.log:ro
+    command: ["/log/app.log"]
