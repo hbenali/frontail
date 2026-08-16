@@ -6,7 +6,7 @@
 # was observed reusing a stale resolution of :latest across builds, silently
 # serving an old release. Bump both the tag and digest here on every release
 # (`docker buildx imagetools inspect hbenali/frontail:<tag>` to get the digest).
-FROM hbenali/frontail:2.11@sha256:4561bc323666a0f43c458211aa293941042d808f7cfdfd30e30482ff5f23f34a
+FROM hbenali/frontail:2.12@sha256:88148c923c07f0cdf75b5fed75b7cca52ce0d289eb5b65b042c0093236a10414
 
 LABEL org.opencontainers.image.title="frontail-demo" \
       org.opencontainers.image.description="Public frontail demo with fake, continuously-generated logs"
