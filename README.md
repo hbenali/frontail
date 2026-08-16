@@ -56,6 +56,9 @@ docker run -d -p 9001:9001 -v /var/log:/log hbenali/frontail /log/syslog
 - Advanced filter: plain text, regex, case-sensitive, invert
 - Keyword highlight (up to 5 coloured keywords)
 - ANSI colour code rendering
+- **Automatic log colorizing** — autodetects apache2/nginx access & error logs, Tomcat/Catalina, and generic syslog, and colours timestamps, IPs, HTTP methods/status codes, log levels, etc. Enabled by default (`--ui-no-colors` to disable); skipped on lines that already carry ANSI colour codes
+- **ANSI-source indicator** — badge shown when the current source already streams ANSI-coloured lines
+- **Sanitized download** — when ANSI colours are detected, an extra "Sanitized" download strips the colour codes before saving
 - Click any line to select / deselect
 - Word wrap toggle
 - Per-line timestamps toggle
@@ -106,6 +109,7 @@ Options:
   --ui-no-indent                don't indent log lines
   --ui-highlight                enable word/line highlighting
   --ui-highlight-preset <path>  custom highlight preset JSON
+  --ui-no-colors                disable log colorizing (ANSI + format autodetection), on by default
   --path <path>                 prefix path (default: /)
   --disable-usage-stats         disable anonymous usage statistics
   --help                        output usage information
@@ -210,6 +214,28 @@ The entrypoint automatically adds the `frontail` user to the socket's group at s
 ```
 
 Available presets: `default`, `npmlog`, `python`.
+
+---
+
+## Log colorizing
+
+Enabled by default — pass `--ui-no-colors` to turn it off server-wide. Each viewer can also flip the **Colors** button in the sidebar; that per-browser choice is saved and overrides the server default.
+
+Two things happen per line, depending on whether it already carries ANSI escape codes:
+
+- **Line already has ANSI codes** (e.g. an app logging with `chalk`/`colorlog`): they're rendered as-is, and format autodetection is skipped for that line so colours don't clash. A small **ANSI colors** badge appears in the topbar the first time this is seen, and a **Sanitized** download button appears in the sidebar controls.
+- **Plain-text line**: frontail tries to recognise the log format and colours the relevant fields — timestamps, IPs, HTTP methods/paths, status codes (2xx green, 3xx cyan, 4xx amber, 5xx red), thread/pid, and log level. Recognised formats:
+  - Apache2 / Nginx combined & common access logs
+  - Apache2 error log (classic and `[core:error]`/`[pid N]` styles)
+  - Nginx error log
+  - Tomcat/Catalina (`juli` one-line format and the classic two-line format)
+  - Generic syslog
+
+Turning colors off also falls back to plain text for ANSI-coloured sources (no `ansi_to_html`), useful when a source's colours are noisy or clash with your theme.
+
+### Sanitized download
+
+If a source contains ANSI codes, the sidebar shows a **Sanitized** download button alongside the normal **Download** button. It streams the same file/container log through `/download?...&sanitize=1`, which strips ANSI escape sequences line-by-line server-side before sending it — handy for pasting logs elsewhere without stray escape codes.
 
 ---
 

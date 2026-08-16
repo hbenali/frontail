@@ -145,8 +145,12 @@ if (program.daemonize) {
       socket.emit('options:hide-topbar');
     }
 
-    if (!program.uiIndent) {
+    if (!program.uiNoIndent) {
       socket.emit('options:no-indent');
+    }
+
+    if (!program.uiNoColors) {
+      socket.emit('options:no-colors');
     }
 
     if (program.uiHighlight) {

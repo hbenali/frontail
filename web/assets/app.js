@@ -32,6 +32,9 @@ window.App = (function app(window, document) {
   var _invertFilter    = false;
   var _fabNewLines     = 0;
   var _userHighlights  = [];
+  var _colorsEnabled   = true;
+  var _colorsServerDefault = true;
+  var _ansiDetected    = false;
 
   var _highlightCssClasses = [
     'kw-highlight-0','kw-highlight-1','kw-highlight-2',
@@ -62,7 +65,8 @@ window.App = (function app(window, document) {
   var _elFilterClear, _elRegexMode, _elCaseSensitive, _elInvertFilter;
   var _elHighlightInput, _elHighlightAdd, _elHighlightList;
   var _elPauseLabel, _elPauseIcon;
-  var _elClearBtn, _elWrapBtn, _elTimestampBtn;
+  var _elClearBtn, _elWrapBtn, _elTimestampBtn, _elColorsBtn;
+  var _elAnsiBadge, _elDownloadSanitizedBtn;
   var _elConnDot, _elConnText;
   var _elLiveIndicator;
   var _elSkippedBadge, _elSkippedCount;
@@ -133,6 +137,115 @@ window.App = (function app(window, document) {
     if (/\b(info|information)\b/.test(t)) return 'info';
     if (/\b(debug|trace|verbose)\b/.test(t)) return 'debug';
     return '';
+  }
+
+  // ── ANSI detection ──────────────────────────────────────────────
+
+  var ANSI_RX = /\x1b\[[0-9;]*[a-zA-Z]/;
+
+  function _hasAnsiCodes(text) {
+    return ANSI_RX.test(text);
+  }
+
+  // ── Format autodetect colorizer (apache2 / nginx / tomcat / syslog) ──
+  // Only ever applied to lines WITHOUT embedded ANSI codes — those already
+  // carry their own colors via ansi_up and are left untouched.
+
+  function _fcSpan(cls, text) {
+    return '<span class="log-fc-' + cls + '">' + text + '</span>';
+  }
+
+  function _fcStatusClass(code) {
+    var c = String(code).charAt(0);
+    if (c === '2') return 'status-2xx';
+    if (c === '3') return 'status-3xx';
+    if (c === '4') return 'status-4xx';
+    if (c === '5') return 'status-5xx';
+    return 'status-other';
+  }
+
+  function _fcLevelClass(word) {
+    var w = (word || '').toLowerCase();
+    if (/^(emerg|alert|crit|severe|error|err|fatal)/.test(w)) return 'level-error';
+    if (/^warn/.test(w)) return 'level-warn';
+    if (/^(notice|info)/.test(w)) return 'level-info';
+    return 'level-debug';
+  }
+
+  var _FORMAT_RULES = [
+    { // Apache/Nginx combined or common access log
+      regex: /^(\S+) (\S+) (\S+) \[([^\]]+)\] "([A-Z]+) (\S*) (HTTP\/\d\.\d)" (\d{3}) (\S+)/,
+      render: function(m) {
+        return _fcSpan('ip', m[1]) + ' ' + m[2] + ' ' + m[3] + ' [' +
+          _fcSpan('time', m[4]) + '] "' + _fcSpan('method', m[5]) + ' ' +
+          _fcSpan('path', m[6]) + ' ' + _fcSpan('proto', m[7]) + '" ' +
+          _fcSpan(_fcStatusClass(m[8]), m[8]) + ' ' + _fcSpan('size', m[9]);
+      }
+    },
+    { // Nginx error log: 2024/01/01 12:00:00 [error] 1234#0: message
+      regex: /^(\d{4}\/\d{2}\/\d{2} \d{2}:\d{2}:\d{2}) \[(\w+)\] (\d+#\d+):/,
+      render: function(m) {
+        return _fcSpan('time', m[1]) + ' [' + _fcSpan(_fcLevelClass(m[2]), m[2]) + '] ' +
+          _fcSpan('pid', m[3]) + ':';
+      }
+    },
+    { // Apache error log, both classic and current formats
+      regex: /^\[([^\]]+)\] \[([\w:]+)\](?: \[(pid \d+|client [^\]]+)\])?/,
+      render: function(m) {
+        var out = '[' + _fcSpan('time', m[1]) + '] [' +
+          _fcSpan(_fcLevelClass(m[2].split(':').pop()), m[2]) + ']';
+        if (m[3]) out += ' [' + _fcSpan('meta', m[3]) + ']';
+        return out;
+      }
+    },
+    { // Tomcat 8.5+/9/10 one-line juli format:
+      // 12-Jan-2024 15:15:22.123 INFO [main] org.apache.catalina.startup.Catalina.start
+      regex: /^(\d{2}-\w{3}-\d{4} \d{2}:\d{2}:\d{2}\.\d{3}) (SEVERE|WARNING|INFO|CONFIG|FINE|FINER|FINEST) \[([^\]]+)\] (\S+)/,
+      render: function(m) {
+        return _fcSpan('time', m[1]) + ' ' + _fcSpan(_fcLevelClass(m[2]), m[2]) + ' [' +
+          _fcSpan('thread', m[3]) + '] ' + _fcSpan('logger', m[4]);
+      }
+    },
+    { // Classic Tomcat juli header line: Jan 12, 2024 3:15:22 PM org.apache.catalina.core.StandardService log
+      regex: /^(\w{3} \d{1,2}, \d{4} \d{1,2}:\d{2}:\d{2} [AP]M) (\S+) (\S+)$/,
+      render: function(m) {
+        return _fcSpan('time', m[1]) + ' ' + _fcSpan('logger', m[2]) + ' ' + _fcSpan('method', m[3]);
+      }
+    },
+    { // Classic Tomcat juli level line: INFO: message / SEVERE: message
+      regex: /^(SEVERE|WARNING|INFO|CONFIG|FINE|FINER|FINEST):/,
+      render: function(m) {
+        return _fcSpan(_fcLevelClass(m[1]), m[1]) + ':';
+      }
+    },
+    { // Generic syslog: Aug 12 10:15:23 myhost sshd[1234]: message
+      regex: /^(\w{3}\s+\d{1,2} \d{2}:\d{2}:\d{2}) (\S+) ([\w.\-/]+)(\[\d+\])?:/,
+      render: function(m) {
+        return _fcSpan('time', m[1]) + ' ' + _fcSpan('host', m[2]) + ' ' +
+          _fcSpan('logger', m[3]) + (m[4] ? _fcSpan('pid', m[4]) : '') + ':';
+      }
+    }
+  ];
+
+  function _applyFormatColors(html) {
+    for (var i = 0; i < _FORMAT_RULES.length; i++) {
+      var m = _FORMAT_RULES[i].regex.exec(html);
+      if (m) return _FORMAT_RULES[i].render(m) + html.slice(m[0].length);
+    }
+    return html;
+  }
+
+  function _colorizeLine(data) {
+    var hasAnsi = _hasAnsiCodes(data);
+    var html;
+    if (_colorsEnabled) {
+      html = ansi_up.escape_for_html(data);
+      html = ansi_up.ansi_to_html(html);
+      if (!hasAnsi) html = _applyFormatColors(html);
+    } else {
+      html = ansi_up.escape_for_html(ansi_up.ansi_to_text(data));
+    }
+    return { html: html, hasAnsi: hasAnsi };
   }
 
   // ── Filter ─────────────────────────────────────────────────────
@@ -253,6 +366,14 @@ window.App = (function app(window, document) {
       new RegExp('(?![^<]*>)(' + rx.source + ')', _caseSensitive ? 'g' : 'gi'),
       '<mark class="search-highlight">$1</mark>'
     );
+  }
+
+  // ── ANSI indicator ──────────────────────────────────────────────
+
+  function _onAnsiDetected() {
+    if (_elAnsiBadge) _elAnsiBadge.classList.remove('hidden');
+    if (_elDownloadSanitizedBtn) _elDownloadSanitizedBtn.classList.remove('hidden');
+    _showToast('Source already contains ANSI colors — autodetected format colorizing skipped for those lines');
   }
 
   // ── Scroll ─────────────────────────────────────────────────────
@@ -421,8 +542,7 @@ window.App = (function app(window, document) {
       var raw = lines[i].getAttribute('data-raw') || '';
       var p   = lines[i].querySelector('.line-content p');
       if (!p) continue;
-      var html = ansi_up.escape_for_html(raw);
-      html = ansi_up.ansi_to_html(html);
+      var html = _colorizeLine(raw).html;
       html = _applyServerHighlightWord(html);
       html = _applyUserHighlights(html);
       if (_filterValue) html = _applyFilterHighlight(html);
@@ -549,6 +669,9 @@ window.App = (function app(window, document) {
       _elClearBtn      = document.getElementById('clearBtn');
       _elWrapBtn       = document.getElementById('wrapBtn');
       _elTimestampBtn  = document.getElementById('timestampBtn');
+      _elColorsBtn     = document.getElementById('colorsBtn');
+      _elAnsiBadge     = document.getElementById('ansiBadge');
+      _elDownloadSanitizedBtn = document.getElementById('downloadSanitizedBtn');
       _elConnDot       = document.getElementById('connDot');
       _elConnText      = document.getElementById('connText');
       _elLiveIndicator = document.getElementById('liveIndicator');
@@ -684,8 +807,19 @@ window.App = (function app(window, document) {
         });
       }
 
+      // Colors (ANSI + format autodetect colorizing)
+      if (_elColorsBtn) {
+        _elColorsBtn.addEventListener('click', function() {
+          _colorsEnabled = !_colorsEnabled;
+          _elColorsBtn.classList.toggle('active', _colorsEnabled);
+          _saveSettings({ colors: _colorsEnabled });
+          _reHighlightAll();
+          _showToast(_colorsEnabled ? 'Log colorizing on' : 'Log colorizing off');
+        });
+      }
+
       // ── Download helper (shared by button + modal) ───────────────
-      function _triggerDownload() {
+      function _triggerDownload(sanitize) {
         var href;
         var label;
         if (_selectedSource && _sources) {
@@ -710,6 +844,10 @@ window.App = (function app(window, document) {
           href = _urlPath + '/download?file=' + _currentFileIndex;
           label = 'Downloading file…';
         }
+        if (sanitize) {
+          href += '&sanitize=1';
+          label = 'Downloading sanitized (colors stripped)…';
+        }
         var a = document.createElement('a');
         a.href = href;
         a.setAttribute('download', '');
@@ -724,6 +862,13 @@ window.App = (function app(window, document) {
         _elDownloadBtn.addEventListener('click', function(e) {
           e.preventDefault();
           _triggerDownload();
+        });
+      }
+
+      if (_elDownloadSanitizedBtn) {
+        _elDownloadSanitizedBtn.addEventListener('click', function(e) {
+          e.preventDefault();
+          _triggerDownload(true);
         });
       }
 
@@ -858,6 +1003,13 @@ window.App = (function app(window, document) {
         .on('options:no-indent', function() {
           if (_logContainer) _logContainer.classList.add('no-indent');
         })
+        .on('options:no-colors', function() {
+          _colorsServerDefault = false;
+          if (_loadSettings().colors === undefined) {
+            _colorsEnabled = false;
+            if (_elColorsBtn) _elColorsBtn.classList.remove('active');
+          }
+        })
         .on('options:highlightConfig', function(cfg) { _highlightConfig = cfg; })
         .on('file-start-info', function(data) {
           if (data.tooLarge) {
@@ -910,6 +1062,14 @@ window.App = (function app(window, document) {
         _timestampEnabled = true;
         if (_elTimestampBtn) _elTimestampBtn.classList.add('active');
       }
+
+      // Colors: explicit per-browser preference wins over the server default
+      if (_saved.colors !== undefined) {
+        _colorsEnabled = !!_saved.colors;
+      } else {
+        _colorsEnabled = _colorsServerDefault;
+      }
+      if (_elColorsBtn) _elColorsBtn.classList.toggle('active', _colorsEnabled);
 
       // Restore filter from localStorage (URL param takes precedence)
       if (!_filterValue && _saved.filter) {
@@ -983,12 +1143,17 @@ window.App = (function app(window, document) {
       contentEl.className = 'line-content';
       var p = document.createElement('p');
 
-      var html = ansi_up.escape_for_html(data);
-      html = ansi_up.ansi_to_html(html);
+      var colorized = _colorizeLine(data);
+      var html = colorized.html;
       html = _applyServerHighlightWord(html);
       html = _applyUserHighlights(html);
       if (_filterValue) html = _applyFilterHighlight(html);
       p.innerHTML = html;
+
+      if (colorized.hasAnsi && !_ansiDetected) {
+        _ansiDetected = true;
+        _onAnsiDetected();
+      }
 
       // Bip check — only for live incoming lines, not replayed from start
       if (!replace) _checkBip(data);

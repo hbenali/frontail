@@ -885,6 +885,44 @@ body {
 .log-pre .ansi-blue   { color: var(--accent) }
 .log-pre .ansi-white  { color: var(--text-primary) }
 
+/* ── Format autodetect colorizer (apache2 / nginx / tomcat / syslog) ── */
+.log-fc-ip       { color: var(--info-color) }
+.log-fc-time     { color: var(--text-muted) }
+.log-fc-host     { color: var(--text-secondary) }
+.log-fc-method   { color: var(--accent); font-weight: 600 }
+.log-fc-path     { color: var(--text-primary) }
+.log-fc-proto    { color: var(--text-muted) }
+.log-fc-size     { color: var(--text-muted) }
+.log-fc-pid      { color: var(--text-muted) }
+.log-fc-thread   { color: #c084fc }
+.log-fc-logger   { color: var(--text-secondary) }
+.log-fc-meta     { color: var(--text-muted) }
+
+.log-fc-status-2xx { color: var(--success-color); font-weight: 600 }
+.log-fc-status-3xx { color: var(--info-color); font-weight: 600 }
+.log-fc-status-4xx { color: var(--warn-color); font-weight: 600 }
+.log-fc-status-5xx { color: var(--error-color); font-weight: 600 }
+.log-fc-status-other { color: var(--text-primary) }
+
+.log-fc-level-error { color: var(--error-color); font-weight: 600 }
+.log-fc-level-warn  { color: var(--warn-color); font-weight: 600 }
+.log-fc-level-info  { color: var(--info-color) }
+.log-fc-level-debug { color: var(--success-color) }
+
+/* ── ANSI-source indicator badge ─────────────────────────────── */
+.ansi-badge {
+  display: flex;
+  align-items: center;
+  background: rgba(192,132,252,0.12);
+  border: 1px solid rgba(192,132,252,0.35);
+  border-radius: 20px;
+  padding: 3px 10px;
+  font-size: 11px;
+  font-weight: 500;
+  color: #c084fc;
+  font-family: 'JetBrains Mono', monospace;
+}
+
 /* ── Responsive / Mobile ─────────────────────────────────────── */
 @media (max-width: 640px) {
   :root { --sidebar-width: 100vw }

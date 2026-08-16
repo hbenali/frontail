@@ -114,6 +114,10 @@
               <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><circle cx="6.5" cy="6.5" r="4.5" stroke="currentColor" stroke-width="1.2"/><path d="M6.5 3.5v3l2 1.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
               <span>Time</span>
             </button>
+            <button class="ctrl-btn active" id="colorsBtn" data-state="on" aria-label="Toggle log colorizing" title="Colorize logs: ANSI colors + apache/nginx/tomcat/syslog autodetection">
+              <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><circle cx="4" cy="4.5" r="2" fill="currentColor"/><circle cx="9" cy="4.5" r="2" fill="currentColor" opacity="0.6"/><circle cx="6.5" cy="9" r="2" fill="currentColor" opacity="0.3"/></svg>
+              <span>Colors</span>
+            </button>
             <button class="ctrl-btn" id="readFromStartBtn" aria-label="Read from file beginning">
               <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2 2v9M4 6.5h7M8 3.5l3 3-3 3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
               <span>Start</span>
@@ -121,6 +125,10 @@
             <button class="ctrl-btn" id="downloadBtn" aria-label="Download log file">
               <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M6.5 2v6.5M4 6l2.5 3L9 6M2 11h9" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
               <span>Download</span>
+            </button>
+            <button class="ctrl-btn hidden" id="downloadSanitizedBtn" aria-label="Download log file with ANSI colors stripped" title="This source contains ANSI color codes — download a plain-text (sanitized) copy">
+              <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M6.5 2v6.5M4 6l2.5 3L9 6M2 11h9" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M2 2l9 9" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+              <span>Sanitized</span>
             </button>
           </div>
         </div>
@@ -164,6 +172,9 @@
           <span class="topbar-file" id="topbarTitle" title="__TITLE__">__TITLE__</span>
         </div>
         <div class="topbar-right">
+          <div class="ansi-badge hidden" id="ansiBadge" title="This source already contains ANSI color codes — format autodetection is skipped for those lines">
+            ANSI colors
+          </div>
           <div class="skipped-badge hidden" id="skippedBadge">
             <span id="skippedCount">0</span> skipped
           </div>
