@@ -234,6 +234,15 @@
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 3v9M4 9l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
         <span class="fab-count" id="fabCount"></span>
       </button>
+
+      <div class="update-banner hidden" id="updateBanner" role="status">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M7 2v5.5l3 2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/><circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.3"/></svg>
+        <span>A new version has been deployed.</span>
+        <button class="update-refresh-btn" id="updateRefreshBtn">Refresh</button>
+        <button class="update-dismiss-btn" id="updateDismissBtn" aria-label="Dismiss">
+          <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M1.5 1.5l7 7M8.5 1.5l-7 7" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+        </button>
+      </div>
     </main>
   </div>
 
@@ -269,6 +278,7 @@
   <script src="__PATH__/app.js"></script>
   <script>
     window._frontailPath = '__PATH__';
+    window._frontailVersion = '__VERSION__';
     var socket = new io.connect('/__NAMESPACE__', {
       path: '__PATH__/socket.io',
       transports: ['websocket']

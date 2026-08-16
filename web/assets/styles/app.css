@@ -934,6 +934,53 @@ body {
   font-family: 'JetBrains Mono', monospace;
 }
 
+/* ── Update-available banner ─────────────────────────────────── */
+.update-banner {
+  position: fixed;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--bg-raised);
+  border: 1px solid var(--accent);
+  color: var(--text-primary);
+  border-radius: 24px;
+  padding: 8px 10px 8px 14px;
+  font-size: 12px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.35);
+  z-index: 60;
+  animation: toastin 0.2s ease;
+}
+
+.update-banner svg { color: var(--accent); flex-shrink: 0 }
+
+.update-refresh-btn {
+  background: var(--accent);
+  color: #fff;
+  border-radius: 16px;
+  padding: 4px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.update-refresh-btn:hover { opacity: 0.88 }
+
+.update-dismiss-btn {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.update-dismiss-btn:hover { color: var(--text-primary); background: var(--bg-hover) }
+
 /* ── Toast notifications ─────────────────────────────────────── */
 .toast-container {
   position: fixed;

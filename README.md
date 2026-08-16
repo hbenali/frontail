@@ -69,6 +69,7 @@ docker run -d -p 9001:9001 -v /var/log:/log hbenali/frontail /log/syslog
 - **Saved filter presets** — save the current filter (text + regex/case/invert) under a name, then reapply or delete it later
 - **Download the currently visible lines** — export exactly what's on screen (after filters, level chips, and source selection) as a `.txt` file, entirely client-side
 - **Richer topbar title** — shows a file/container icon, the basename (full path on hover), a source count when viewing "All", and a small dot whenever a filter is narrowing what you see
+- **Update-available banner** — if the server gets redeployed while a tab is open, the socket reconnects to the new process and a "new version deployed, refresh" banner appears instead of silently showing stale UI
 - Click any line to select / deselect
 - Word wrap toggle
 - Per-line timestamps toggle
@@ -210,7 +211,7 @@ To stream container logs from within the frontail Docker image, mount the Docker
 ```yaml
 # docker-compose.yml
 frontail:
-  image: hbenali/frontail:2.8
+  image: hbenali/frontail:2.9
   command: --container myapp /logs/syslog
   volumes:
     - /var/log:/logs:ro
@@ -342,7 +343,7 @@ docker build -t hbenali/frontail .
 docker buildx build --platform linux/amd64,linux/arm64 \
   --build-arg FRONTAIL_VERSION=$(node -p "require('./package.json').version") \
   --build-arg FRONTAIL_REVISION=$(git rev-parse HEAD) \
-  -t hbenali/frontail:2.8 -t hbenali/frontail:latest --push .
+  -t hbenali/frontail:2.9 -t hbenali/frontail:latest --push .
 
 # Run (file only)
 docker run -d \

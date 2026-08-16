@@ -76,6 +76,7 @@ window.App = (function app(window, document) {
   var _elSkippedBadge, _elSkippedCount;
   var _elEmptyState;
   var _elFabScroll, _elFabCount;
+  var _elUpdateBanner, _elUpdateRefreshBtn, _elUpdateDismissBtn;
   var _elLogViewport;
   var _elSidebarCollapse, _elExpandSidebar;
   var _toastContainer;
@@ -123,6 +124,21 @@ window.App = (function app(window, document) {
       el.style.transition = 'opacity 0.3s';
       setTimeout(function() { if (el.parentNode) el.parentNode.removeChild(el); }, 300);
     }, duration || 2000);
+  }
+
+  // ── Deployed-version check ──────────────────────────────────────
+  // The version baked into this page load vs. whatever the server reports
+  // on each socket (re)connect. A mismatch means the server process was
+  // restarted with a new release while this tab was open (e.g. a redeploy) -
+  // the socket reconnects automatically, but the page's JS/HTML is stale.
+
+  var _updateBannerDismissed = false;
+
+  function _checkDeployedVersion(serverVersion) {
+    var pageVersion = window._frontailVersion;
+    if (!pageVersion || !serverVersion || pageVersion === serverVersion) return;
+    if (_updateBannerDismissed) return;
+    if (_elUpdateBanner) _elUpdateBanner.classList.remove('hidden');
   }
 
   // ── Byte formatter ────────────────────────────────────────────
@@ -1003,6 +1019,9 @@ window.App = (function app(window, document) {
       _elEmptyState    = document.getElementById('emptyState');
       _elFabScroll     = document.getElementById('fabScroll');
       _elFabCount      = document.getElementById('fabCount');
+      _elUpdateBanner  = document.getElementById('updateBanner');
+      _elUpdateRefreshBtn = document.getElementById('updateRefreshBtn');
+      _elUpdateDismissBtn = document.getElementById('updateDismissBtn');
       _elLogViewport   = document.getElementById('logViewport');
       _elSidebarCollapse = document.getElementById('sidebarCollapse');
       _elExpandSidebar = document.getElementById('expandSidebar');
@@ -1295,6 +1314,17 @@ window.App = (function app(window, document) {
         });
       }
 
+      // Update-available banner
+      if (_elUpdateRefreshBtn) {
+        _elUpdateRefreshBtn.addEventListener('click', function() { window.location.reload(); });
+      }
+      if (_elUpdateDismissBtn) {
+        _elUpdateDismissBtn.addEventListener('click', function() {
+          _updateBannerDismissed = true;
+          if (_elUpdateBanner) _elUpdateBanner.classList.add('hidden');
+        });
+      }
+
       // Scroll detection
       if (_elLogViewport) {
         _elLogViewport.addEventListener('scroll', _debounce(_checkScrollPosition, 50), { passive: true });
@@ -1337,6 +1367,7 @@ window.App = (function app(window, document) {
         .on('connect_error', function() { _setConnStatus('disconnected', 'Connection error'); })
         .on('reconnecting',  function() { _setConnStatus('connecting',   'Reconnecting…'); })
         .on('options:lines', function(limit) { _linesLimit = limit; })
+        .on('options:version', function(v) { _checkDeployedVersion(v); })
         .on('options:source-info', function(info) {
           _isContainer = !!(info && info.isContainer);
         })

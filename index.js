@@ -155,6 +155,7 @@ if (program.daemonize) {
 
   const filesSocket = io.of(`/${filesNamespace}`).on('connection', (socket) => {
     socket.emit('options:lines', program.lines);
+    socket.emit('options:version', pkg.version);
 
     if (program.uiHideTopbar) {
       socket.emit('options:hide-topbar');
