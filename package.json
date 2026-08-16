@@ -8,7 +8,9 @@
     "Maciej Winnicki <maciej.winnicki@gmail.com> (original author, https://github.com/mthenw/frontail)"
   ],
   "license": "MIT",
-  "bin": "./bin/frontail",
+  "bin": {
+    "frontail": "bin/frontail"
+  },
   "publishConfig": {
     "access": "public"
   },
@@ -81,7 +83,9 @@
     ],
     "overrides": [
       {
-        "files": ["web/assets/app.js"],
+        "files": [
+          "web/assets/app.js"
+        ],
         "env": {
           "node": false,
           "browser": true
