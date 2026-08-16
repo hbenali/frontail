@@ -127,6 +127,19 @@ if (program.daemonize) {
   }
 
   /**
+   * Setup extra log colorizing rules
+   */
+  let colorsPreset;
+  if (program.uiColorsPreset) {
+    const colorsPresetPath = path.resolve(untildify(program.uiColorsPreset));
+    if (fs.existsSync(colorsPresetPath)) {
+      colorsPreset = JSON.parse(fs.readFileSync(colorsPresetPath));
+    } else {
+      throw new Error(`Colors preset file ${colorsPresetPath} doesn't exists`);
+    }
+  }
+
+  /**
    * When connected send starting data
    */
   const tailer = tail(program.args, {
@@ -155,6 +168,10 @@ if (program.daemonize) {
 
     if (program.uiHighlight) {
       socket.emit('options:highlightConfig', highlightConfig);
+    }
+
+    if (colorsPreset) {
+      socket.emit('options:colorsPreset', colorsPreset);
     }
 
     socket.emit('options:sources', tailer.getSources());

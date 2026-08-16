@@ -224,15 +224,86 @@ window.App = (function app(window, document) {
         return _fcSpan('time', m[1]) + ' ' + _fcSpan('host', m[2]) + ' ' +
           _fcSpan('logger', m[3]) + (m[4] ? _fcSpan('pid', m[4]) : '') + ':';
       }
+    },
+    { // Log4j/Logback pipe-delimited: 2024-01-01 12:00:00,000 | INFO | message [logger<thread>]
+      regex: /^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}[.,]\d{3})\s*\|\s*(\w+)\s*\|\s*/,
+      render: function(m) {
+        return _fcSpan('time', m[1]) + ' | ' + _fcSpan(_fcLevelClass(m[2]), m[2]) + ' | ';
+      }
     }
   ];
 
-  function _applyFormatColors(html) {
-    for (var i = 0; i < _FORMAT_RULES.length; i++) {
-      var m = _FORMAT_RULES[i].regex.exec(html);
-      if (m) return _FORMAT_RULES[i].render(m) + html.slice(m[0].length);
+  // ── User-extensible format rules ────────────────────────────────
+  // Declarative rules supplied by the server (--ui-colors-preset) as
+  // [{ regex, flags, template }]. template placeholders are {N} (group N,
+  // unstyled) or {N:spec} where spec is "status" / "level" (auto-classed),
+  // a class name (-> log-fc-<name>), or a literal color ("#fff", "rgb(...)").
+
+  var _userFormatRules = [];
+
+  function _fcSpanBySpec(spec, text) {
+    if (!spec) return text;
+    if (spec === 'status') return _fcSpan(_fcStatusClass(text), text);
+    if (spec === 'level') return _fcSpan(_fcLevelClass(text), text);
+    if (/^(#|rgb|hsl)/i.test(spec)) {
+      return '<span style="color:' + spec.replace(/"/g, '') + '">' + text + '</span>';
     }
-    return html;
+    return _fcSpan(spec, text);
+  }
+
+  function _compileUserFormatRule(spec) {
+    if (!spec || typeof spec.regex !== 'string' || typeof spec.template !== 'string') return null;
+    var regex;
+    try {
+      regex = new RegExp(spec.regex, spec.flags || '');
+    } catch (e) { return null; }
+    var template = spec.template;
+    return {
+      regex: regex,
+      render: function(m) {
+        return template.replace(/\{(\d+)(?::([^}]+))?\}/g, function(whole, idx, clsSpec) {
+          var val = m[Number(idx)];
+          if (val === undefined) return '';
+          return _fcSpanBySpec(clsSpec, val);
+        });
+      }
+    };
+  }
+
+  // ── Generic fallback: token-level coloring for any format not matched
+  // above — timestamps, log levels, IPs, bracketed metadata, quoted strings.
+
+  var GENERIC_FC_RX = new RegExp(
+    '(\\d{4}-\\d{2}-\\d{2}[ T]\\d{2}:\\d{2}:\\d{2}(?:[.,]\\d+)?(?:Z|[+-]\\d{2}:?\\d{2})?)' +
+    '|((?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\\s+\\d{1,2}\\s+\\d{2}:\\d{2}:\\d{2})' +
+    '|(\\b(?:TRACE|DEBUG|INFO|NOTICE|WARNING|WARN|ERROR|ERR|SEVERE|FATAL|CRITICAL|CRIT|EMERGENCY|EMERG|ALERT)\\b)' +
+    '|(\\b(?:\\d{1,3}\\.){3}\\d{1,3}\\b)' +
+    '|(\\[[^\\[\\]]{1,300}\\])' +
+    '|("[^"]{0,200}")',
+    'gi'
+  );
+
+  function _applyGenericColors(html) {
+    return html.replace(GENERIC_FC_RX, function(m, time1, time2, level, ip, bracket, quoted) {
+      if (time1 || time2) return _fcSpan('time', m);
+      if (level) return _fcSpan(_fcLevelClass(m), m);
+      if (ip) return _fcSpan('ip', m);
+      if (bracket) return _fcSpan('meta', m);
+      if (quoted) return _fcSpan('str', m);
+      return m;
+    });
+  }
+
+  function _applyFormatColors(html) {
+    var rules = _userFormatRules.concat(_FORMAT_RULES);
+    for (var i = 0; i < rules.length; i++) {
+      rules[i].regex.lastIndex = 0; // defensive: user-supplied rules may carry a 'g' flag
+      var m = rules[i].regex.exec(html);
+      if (m) {
+        return html.slice(0, m.index) + rules[i].render(m) + html.slice(m.index + m[0].length);
+      }
+    }
+    return _applyGenericColors(html);
   }
 
   function _colorizeLine(data) {
@@ -1011,6 +1082,11 @@ window.App = (function app(window, document) {
           }
         })
         .on('options:highlightConfig', function(cfg) { _highlightConfig = cfg; })
+        .on('options:colorsPreset', function(rules) {
+          if (Array.isArray(rules)) {
+            _userFormatRules = rules.map(_compileUserFormatRule).filter(Boolean);
+          }
+        })
         .on('file-start-info', function(data) {
           if (data.tooLarge) {
             _openModal(data.size);

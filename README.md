@@ -56,7 +56,7 @@ docker run -d -p 9001:9001 -v /var/log:/log hbenali/frontail /log/syslog
 - Advanced filter: plain text, regex, case-sensitive, invert
 - Keyword highlight (up to 5 coloured keywords)
 - ANSI colour code rendering
-- **Automatic log colorizing** — autodetects apache2/nginx access & error logs, Tomcat/Catalina, and generic syslog, and colours timestamps, IPs, HTTP methods/status codes, log levels, etc. Enabled by default (`--ui-no-colors` to disable); skipped on lines that already carry ANSI colour codes
+- **Automatic log colorizing** — autodetects apache2/nginx access & error logs, Tomcat/Catalina, Log4j/Logback, and generic syslog, colouring timestamps, IPs, HTTP methods/status codes, log levels, etc.; falls back to generic token coloring (timestamps/levels/IPs/brackets/quotes) for anything else. Enabled by default (`--ui-no-colors` to disable); skipped on lines that already carry ANSI colour codes. Extensible with your own rules via `--ui-colors-preset`
 - **ANSI-source indicator** — badge shown when the current source already streams ANSI-coloured lines
 - **Sanitized download** — when ANSI colours are detected, an extra "Sanitized" download strips the colour codes before saving
 - Click any line to select / deselect
@@ -110,6 +110,7 @@ Options:
   --ui-highlight                enable word/line highlighting
   --ui-highlight-preset <path>  custom highlight preset JSON
   --ui-no-colors                disable log colorizing (ANSI + format autodetection), on by default
+  --ui-colors-preset <path>     extra log colorizing rules JSON (see ./preset/colors-example.json)
   --path <path>                 prefix path (default: /)
   --disable-usage-stats         disable anonymous usage statistics
   --help                        output usage information
@@ -187,7 +188,7 @@ To stream container logs from within the frontail Docker image, mount the Docker
 ```yaml
 # docker-compose.yml
 frontail:
-  image: hbenali/frontail:2.0
+  image: hbenali/frontail:2.2
   command: --container myapp /logs/syslog
   volumes:
     - /var/log:/logs:ro
@@ -229,13 +230,41 @@ Two things happen per line, depending on whether it already carries ANSI escape 
   - Apache2 error log (classic and `[core:error]`/`[pid N]` styles)
   - Nginx error log
   - Tomcat/Catalina (`juli` one-line format and the classic two-line format)
+  - Log4j/Logback pipe-delimited (`2024-01-01 12:00:00,000 | INFO | message [logger<thread>]`)
   - Generic syslog
+
+  If none of those match, a **generic fallback** still colours whatever it recognises anywhere in the line: timestamps, log-level words, IPv4 addresses, `[bracketed]` metadata, and `"quoted strings"`. So even a completely custom log format gets *some* coloring by default.
 
 Turning colors off also falls back to plain text for ANSI-coloured sources (no `ansi_to_html`), useful when a source's colours are noisy or clash with your theme.
 
 ### Sanitized download
 
 If a source contains ANSI codes, the sidebar shows a **Sanitized** download button alongside the normal **Download** button. It streams the same file/container log through `/download?...&sanitize=1`, which strips ANSI escape sequences line-by-line server-side before sending it — handy for pasting logs elsewhere without stray escape codes.
+
+### Customizing: your own format rules
+
+For a log format you want colored *precisely* (beyond what the generic fallback gives you), pass `--ui-colors-preset <path>` pointing at a JSON file of rules — see [`preset/colors-example.json`](./preset/colors-example.json). Rules are checked before the built-in formats, so they can also override them.
+
+Each rule is:
+
+```json
+{
+  "name": "log4j-pipe",
+  "regex": "^(\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}[.,]\\d{3})\\s*\\|\\s*(\\w+)\\s*\\|\\s*",
+  "template": "{1:time} | {2:level} | "
+}
+```
+
+- **`regex`** — a JS regex source (as a JSON string, so backslashes need escaping). Anchor with `^` to match a structured prefix (like the built-ins), or leave unanchored to colorize a field anywhere in the line (e.g. `"traceId=(\\S+)"`).
+- **`flags`** — optional regex flags, e.g. `"i"`. Avoid `"g"` — matching is always single-shot per line.
+- **`template`** — the replacement for whatever the regex matched. Reference capture groups with `{N}`; add `:spec` to color them:
+  - `{1:time}`, `{1:ip}`, `{1:method}`, `{1:logger}`, … → any name maps to a `log-fc-<name>` CSS class (style your own in a custom stylesheet, or reuse a built-in one like `time`/`ip`/`meta`/`str`)
+  - `{1:status}` → auto-colored red/amber/cyan/green by first digit (2xx/3xx/4xx/5xx), for HTTP-style status codes
+  - `{1:level}` → auto-colored by severity (error/warn/info/debug), for log-level words
+  - `{1:#c084fc}` (or `rgb(...)`, `hsl(...)`) → an inline color, no CSS needed
+  - `{1}` with no spec → inserted as plain text, unstyled
+
+Only the text the regex matched gets replaced; the rest of the line (and any other rules/generic fallback) is unaffected. Rules are sent to the browser once per connection over the same socket channel as `--ui-highlight-preset`, so there's no need to edit `app.css`.
 
 ---
 
@@ -270,7 +299,7 @@ docker build -t hbenali/frontail .
 
 # Multi-arch build & push
 docker buildx build --platform linux/amd64,linux/arm64 \
-  -t hbenali/frontail:2.0 -t hbenali/frontail:latest --push .
+  -t hbenali/frontail:2.2 -t hbenali/frontail:latest --push .
 
 # Run (file only)
 docker run -d \
@@ -284,6 +313,13 @@ docker run -d \
   -v /var/log:/log:ro \
   -v /var/run/docker.sock:/var/run/docker.sock:ro \
   hbenali/frontail /log/syslog --container myapp
+
+# Run with a custom log-colorizing preset (bind-mount it in, then point at it)
+docker run -d \
+  -p 9001:9001 \
+  -v /var/log:/log:ro \
+  -v ./my-colors.json:/frontail/preset/my-colors.json:ro \
+  hbenali/frontail /log/syslog --ui-colors-preset /frontail/preset/my-colors.json
 ```
 
 The image uses a **multi-stage build** (Node 24 LTS on Debian Bookworm Slim), includes `docker-ce-cli` for container streaming, and runs as a non-root `frontail` user. The entrypoint script adds the user to the docker group at runtime when `docker.sock` is mounted.

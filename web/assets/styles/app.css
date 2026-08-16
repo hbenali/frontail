@@ -897,6 +897,7 @@ body {
 .log-fc-thread   { color: #c084fc }
 .log-fc-logger   { color: var(--text-secondary) }
 .log-fc-meta     { color: var(--text-muted) }
+.log-fc-str      { color: var(--success-color) }
 
 .log-fc-status-2xx { color: var(--success-color); font-weight: 600 }
 .log-fc-status-3xx { color: var(--info-color); font-weight: 600 }
