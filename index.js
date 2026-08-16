@@ -58,7 +58,7 @@ if (program.daemonize) {
   appBuilder
     .static(path.join(__dirname, 'web', 'assets'))
     .download(
-      program.args.map((f) => require('path').resolve(f)),
+      program.args.map((f) => path.resolve(f)),
       { containers: program.container, engine: program.containerEngine }
     )
     .index(
@@ -188,7 +188,7 @@ if (program.daemonize) {
     });
 
     tailer.getErrors().forEach((err) => {
-      socket.emit('line', { t: '[frontail] ' + err.container + ': ' + err.message, s: null });
+      socket.emit('line', { t: `[frontail] ${  err.container  }: ${  err.message}`, s: null });
     });
 
     // Client requests full file/container logs from beginning
@@ -238,7 +238,7 @@ if (program.daemonize) {
   });
 
   tailer.on('error', (err) => {
-    filesSocket.emit('line', '[frontail] ' + err.container + ': ' + err.message);
+    filesSocket.emit('line', `[frontail] ${  err.container  }: ${  err.message}`);
   });
 
   stats.track('runtime', 'started');

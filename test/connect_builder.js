@@ -90,7 +90,7 @@ describe('connectBuilder', () => {
     request(app).get('/').expect('ns', done);
   });
 
-  it('should serve container log download via /download?container=', function(done) {
+  it('should serve container log download via /download?container=', function serveContainerLogDownload(done) {
     const fixturesDir = path.join(__dirname, 'fixtures');
     const app = connectBuilder('/')
       .static(fixturesDir)

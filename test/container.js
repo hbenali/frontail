@@ -64,7 +64,7 @@ describe('container log streaming', () => {
       buffer: 5
     });
 
-    var lines = [];
+    const lines = [];
     tailer.on('line', (line) => {
       lines.push(line);
       if (lines.length === 2) {
@@ -145,7 +145,7 @@ describe('container log streaming', () => {
       buffer: 10
     });
 
-    var lines = [];
+    const lines = [];
     tailer.readFromStart(0,
       (line) => lines.push(line),
       () => {
@@ -204,7 +204,7 @@ describe('container log streaming', () => {
       { name: '/var/log/app.log', type: 'file' }
     ]);
 
-    var lines = [];
+    const lines = [];
     tailer.on('line', (line) => {
       lines.push(line);
       if (lines.length === 2) {
