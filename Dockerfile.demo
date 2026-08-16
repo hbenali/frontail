@@ -1,7 +1,12 @@
 # Demo image: extends the real frontail image with fake seed logs and a
 # background generator, so it can be deployed publicly (e.g. Render's free
 # tier) without ever touching real data.
-FROM hbenali/frontail:latest
+#
+# Pinned to a specific tag+digest rather than :latest: Render's build cache
+# was observed reusing a stale resolution of :latest across builds, silently
+# serving an old release. Bump both the tag and digest here on every release
+# (`docker buildx imagetools inspect hbenali/frontail:<tag>` to get the digest).
+FROM hbenali/frontail:2.8@sha256:ef54e69f28572b1aec587d827574fa17f7761e2ceeee2cedc633f8d5eb6f21f1
 
 LABEL org.opencontainers.image.title="frontail-demo" \
       org.opencontainers.image.description="Public frontail demo with fake, continuously-generated logs"
