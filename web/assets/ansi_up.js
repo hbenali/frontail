@@ -83,10 +83,11 @@
     };
 
     Ansi_Up.prototype.escape_for_html = function (txt) {
-      return txt.replace(/[&<>]/gm, function(str) {
+      return txt.replace(/[&<>"]/gm, function(str) {
         if (str == "&") return "&amp;";
         if (str == "<") return "&lt;";
         if (str == ">") return "&gt;";
+        if (str == "\"") return "&quot;";
       });
     };
 

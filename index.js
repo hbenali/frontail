@@ -36,7 +36,7 @@ stats.time('runtime', 'runtime');
  */
 const doAuthorization = !!(program.user && program.password);
 const doSecure = !!(program.key && program.certificate);
-const sessionSecret = String(+new Date()) + Math.random();
+const sessionSecret = crypto.randomBytes(32).toString('hex');
 const files = [].concat(program.args).concat(program.container).join(' ');
 const filesNamespace = crypto.createHash('md5').update(files).digest('hex');
 const urlPath = program.urlPath.replace(/\/$/, ''); // remove trailing slash
@@ -52,7 +52,7 @@ if (program.daemonize) {
    */
   const appBuilder = connectBuilder(urlPath);
   if (doAuthorization) {
-    appBuilder.session(sessionSecret);
+    appBuilder.session(sessionSecret, doSecure);
     appBuilder.authorize(program.user, program.password);
   }
   appBuilder

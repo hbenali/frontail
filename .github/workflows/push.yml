@@ -1,5 +1,7 @@
 on: push
 name: Build, Lint, Test, and Publish
+permissions:
+  contents: write
 jobs:
   build:
     name: Build
