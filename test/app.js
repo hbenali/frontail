@@ -52,10 +52,15 @@ describe('browser application', () => {
 
     jsdom.env({
       html,
-      url: 'http://localhost?filter=line.*',
+      url: 'http://localhost?filter=line',
       src: [ansiup, src],
       onload: (domWindow) => {
         window = domWindow;
+        window.matchMedia =
+          window.matchMedia ||
+          function matchMedia() {
+            return { matches: false, addListener: () => {}, removeListener: () => {} };
+          };
 
         initApp();
         done();
@@ -68,31 +73,29 @@ describe('browser application', () => {
 
     const log = window.document.querySelector('.log');
     log.childNodes.length.should.be.equal(1);
-    log.childNodes[0].textContent.should.be.equal('test');
-    log.childNodes[0].className.should.be.equal('line');
-    log.childNodes[0].tagName.should.be.equal('DIV');
-    log.childNodes[0].innerHTML.should.be.equal(
-      '<p class="inner-line">test</p>'
-    );
+    const line = log.childNodes[0];
+    line.classList.contains('log-line').should.equal(true);
+    line.tagName.should.be.equal('DIV');
+    line.querySelector('.line-content p').textContent.should.be.equal('test');
   });
 
   it('should select line when clicked', () => {
     io.emit('line', 'test');
 
-    const line = window.document.querySelector('.line');
+    const line = window.document.querySelector('.log-line');
     clickOnElement(line);
 
-    line.className.should.be.equal('line-selected');
+    line.classList.contains('selected').should.equal(true);
   });
 
   it('should deselect line when selected line clicked', () => {
     io.emit('line', 'test');
 
-    const line = window.document.querySelector('.line');
+    const line = window.document.querySelector('.log-line');
     clickOnElement(line);
     clickOnElement(line);
 
-    line.className.should.be.equal('line');
+    line.classList.contains('selected').should.equal(false);
   });
 
   it('should limit number of lines in browser', () => {
@@ -103,8 +106,8 @@ describe('browser application', () => {
 
     const log = window.document.querySelector('.log');
     log.childNodes.length.should.be.equal(2);
-    log.childNodes[0].textContent.should.be.equal('line2');
-    log.childNodes[1].textContent.should.be.equal('line3');
+    log.childNodes[0].querySelector('.line-content p').textContent.should.be.equal('line2');
+    log.childNodes[1].querySelector('.line-content p').textContent.should.be.equal('line3');
   });
 
   it('should hide topbar', () => {
@@ -132,8 +135,8 @@ describe('browser application', () => {
     });
     io.emit('line', 'foo bar');
 
-    const line = window.document.querySelector('.line');
-    line.innerHTML.should.containEql(
+    const line = window.document.querySelector('.log-line');
+    line.querySelector('.line-content').innerHTML.should.containEql(
       '<span style="background: black">foo</span> <span style="background: black">bar</span>'
     );
   });
@@ -146,17 +149,16 @@ describe('browser application', () => {
     });
     io.emit('line', 'line1');
 
-    const line = window.document.querySelector('.line');
-    line.parentNode.innerHTML.should.equal(
-      '<div class="line" style="background: black"><p class="inner-line">line1</p></div>'
-    );
+    const line = window.document.querySelector('.log-line');
+    line.getAttribute('style').should.equal('background: black');
+    line.querySelector('.line-content p').textContent.should.be.equal('line1');
   });
 
   it('should escape HTML', () => {
     io.emit('line', '<a/>');
 
-    const line = window.document.querySelector('.line');
-    line.innerHTML.should.equal('<p class="inner-line">&lt;a/&gt;</p>');
+    const line = window.document.querySelector('.log-line');
+    line.querySelector('.line-content p').innerHTML.should.equal('&lt;a/&gt;');
   });
 
   it('should work filter from URL', () => {
@@ -165,13 +167,13 @@ describe('browser application', () => {
     io.emit('line', 'line2');
 
     const filterInput = window.document.querySelector('#filter');
-    filterInput.value.should.be.equal('line.*');
+    filterInput.value.should.be.equal('line');
     const log = window.document.querySelector('.log');
     log.childNodes.length.should.be.equal(3);
-    log.childNodes[0].style.display.should.be.equal('');
-    log.childNodes[1].style.display.should.be.equal('none');
-    log.childNodes[2].style.display.should.be.equal('');
-    window.location.href.should.containEql('filter=line.*');
+    log.childNodes[0].classList.contains('filtered-out').should.equal(false);
+    log.childNodes[1].classList.contains('filtered-out').should.equal(true);
+    log.childNodes[2].classList.contains('filtered-out').should.equal(false);
+    window.location.href.should.containEql('filter=line');
   });
 
   it('should clean filter', () => {
@@ -184,9 +186,9 @@ describe('browser application', () => {
     filterInput.dispatchEvent(event);
     const log = window.document.querySelector('.log');
     log.childNodes.length.should.be.equal(3);
-    log.childNodes[0].style.display.should.be.equal('');
-    log.childNodes[1].style.display.should.be.equal('');
-    log.childNodes[2].style.display.should.be.equal('');
+    log.childNodes[0].classList.contains('filtered-out').should.equal(false);
+    log.childNodes[1].classList.contains('filtered-out').should.equal(false);
+    log.childNodes[2].classList.contains('filtered-out').should.equal(false);
     window.location.href.should.be.equal('http://localhost/');
   });
 
@@ -201,9 +203,9 @@ describe('browser application', () => {
     const event = new window.KeyboardEvent('keyup', { keyCode: 13 });
     filterInput.dispatchEvent(event);
     log.childNodes.length.should.be.equal(3);
-    log.childNodes[0].style.display.should.be.equal('none');
-    log.childNodes[1].style.display.should.be.equal('');
-    log.childNodes[2].style.display.should.be.equal('none');
+    log.childNodes[0].classList.contains('filtered-out').should.equal(true);
+    log.childNodes[1].classList.contains('filtered-out').should.equal(false);
+    log.childNodes[2].classList.contains('filtered-out').should.equal(true);
     window.location.href.should.containEql('filter=other');
   });
 
@@ -211,32 +213,31 @@ describe('browser application', () => {
     io.emit('line', 'line1');
     const btn = window.document.querySelector('#pauseBtn');
     const event = window.document.createEvent('Event');
-    event.initEvent('mouseup', true, true);
+    event.initEvent('click', true, true);
     btn.dispatchEvent(event);
     io.emit('line', 'line2');
     io.emit('line', 'line3');
 
-    btn.className.should.containEql('play');
+    btn.classList.contains('active').should.equal(true);
     const log = window.document.querySelector('.log');
-    log.childNodes.length.should.be.equal(2);
-    log.lastChild.textContent.should.be.equal('==> SKIPPED: 2 <==');
+    log.childNodes.length.should.be.equal(1);
+    log.lastChild.querySelector('.line-content p').textContent.should.be.equal('line1');
   });
 
   it('should play', () => {
     const btn = window.document.querySelector('#pauseBtn');
     const event = window.document.createEvent('Event');
-    event.initEvent('mouseup', true, true);
+    event.initEvent('click', true, true);
     btn.dispatchEvent(event);
     io.emit('line', 'line1');
     const log = window.document.querySelector('.log');
-    log.childNodes.length.should.be.equal(1);
-    log.lastChild.textContent.should.be.equal('==> SKIPPED: 1 <==');
-    btn.className.should.containEql('play');
+    log.childNodes.length.should.be.equal(0);
+    btn.classList.contains('active').should.equal(true);
     btn.dispatchEvent(event);
     io.emit('line', 'line2');
 
-    btn.className.should.not.containEql('play');
-    log.childNodes.length.should.be.equal(2);
-    log.lastChild.textContent.should.be.equal('line2');
+    btn.classList.contains('active').should.equal(false);
+    log.childNodes.length.should.be.equal(1);
+    log.lastChild.querySelector('.line-content p').textContent.should.be.equal('line2');
   });
 });
