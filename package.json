@@ -1,6 +1,6 @@
 {
   "name": "frontail",
-  "version": "2.10.0",
+  "version": "2.11.0",
   "description": "streaming logs to the browser",
   "homepage": "https://github.com/hbenali/frontail",
   "author": "Houssem eXo <hbenali@exoplatform.com>",
