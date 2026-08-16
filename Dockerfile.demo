@@ -3,6 +3,9 @@
 # tier) without ever touching real data.
 FROM hbenali/frontail:latest
 
+LABEL org.opencontainers.image.title="frontail-demo" \
+      org.opencontainers.image.description="Public frontail demo with fake, continuously-generated logs"
+
 USER root
 
 COPY demo/seed/ /frontail/demo/seed/

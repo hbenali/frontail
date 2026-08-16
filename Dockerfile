@@ -12,6 +12,20 @@ RUN npm ci --omit=dev --ignore-scripts
 # ── Stage 2: runtime ─────────────────────────────────────────────────────────
 FROM node:24-bookworm-slim AS runtime
 
+# Passed at build time via --build-arg; see README's "Docker" section
+ARG FRONTAIL_VERSION=0.0.0-dev
+ARG FRONTAIL_REVISION=""
+
+LABEL org.opencontainers.image.title="frontail" \
+      org.opencontainers.image.description="streaming logs to the browser" \
+      org.opencontainers.image.source="https://github.com/hbenali/frontail" \
+      org.opencontainers.image.url="https://github.com/hbenali/frontail" \
+      org.opencontainers.image.documentation="https://github.com/hbenali/frontail#readme" \
+      org.opencontainers.image.licenses="MIT" \
+      org.opencontainers.image.authors="Houssem Ben Ali <hbenali.tn@gmail.com>" \
+      org.opencontainers.image.version="${FRONTAIL_VERSION}" \
+      org.opencontainers.image.revision="${FRONTAIL_REVISION}"
+
 # Install docker CLI (lightweight, no daemon) for container log streaming
 # Also install gosu for privilege drop after docker socket group setup
 RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates curl gosu \
