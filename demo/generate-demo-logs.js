@@ -109,6 +109,21 @@ function coloredLine() {
   return pick(variants);
 }
 
+function jsonLine(d) {
+  const level = pick(['info', 'info', 'info', 'warn', 'error', 'debug']);
+  const base = { level, time: d.toISOString() };
+  const variants = {
+    info: [
+      { msg: 'request handled', status: 200, path: '/api/users' },
+      { msg: 'cache refreshed', keys: Math.floor(Math.random() * 500) },
+    ],
+    warn: [{ msg: 'slow query', duration_ms: Math.floor(Math.random() * 999) }],
+    error: [{ msg: 'db connection failed', status: 500, ip: randomIp() }],
+    debug: [{ msg: 'cache hit', ratio: Number(Math.random().toFixed(2)) }],
+  };
+  return JSON.stringify({ ...base, ...pick(variants[level]) });
+}
+
 const FILES = [
   { name: 'access.log', gen: accessLogLine },
   { name: 'nginx-error.log', gen: nginxErrorLine },
@@ -118,6 +133,7 @@ const FILES = [
   { name: 'syslog.log', gen: syslogLine },
   { name: 'custom.log', gen: customLine },
   { name: 'colored.log', gen: coloredLine },
+  { name: 'json.log', gen: jsonLine },
 ];
 
 function tick() {

@@ -23,4 +23,4 @@ RUN chmod +x /frontail/docker-entrypoint-demo.sh \
  && chown -R frontail:frontail /demo /frontail/demo
 
 ENTRYPOINT ["/frontail/docker-entrypoint-demo.sh"]
-CMD ["/demo/access.log", "/demo/nginx-error.log", "/demo/apache-error.log", "/demo/catalina.out", "/demo/platform.log", "/demo/syslog.log", "/demo/custom.log", "/demo/colored.log", "--disable-usage-stats", "--number", "60"]
+CMD ["/demo/access.log", "/demo/nginx-error.log", "/demo/apache-error.log", "/demo/catalina.out", "/demo/platform.log", "/demo/syslog.log", "/demo/custom.log", "/demo/colored.log", "/demo/json.log", "--disable-usage-stats", "--number", "60"]

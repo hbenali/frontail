@@ -1,0 +1,4 @@
+{"level":"info","time":"2026-08-16T20:00:00.000Z","msg":"server started","port":8080}
+{"level":"warn","time":"2026-08-16T20:00:01.000Z","msg":"slow query","duration_ms":812}
+{"level":"error","time":"2026-08-16T20:00:02.000Z","msg":"db connection failed","status":500,"ip":"10.2.3.4"}
+{"level":"debug","time":"2026-08-16T20:00:03.000Z","msg":"cache hit","ratio":0.94}
