@@ -300,7 +300,9 @@ window.App = (function app(window, document) {
       rules[i].regex.lastIndex = 0; // defensive: user-supplied rules may carry a 'g' flag
       var m = rules[i].regex.exec(html);
       if (m) {
-        return html.slice(0, m.index) + rules[i].render(m) + html.slice(m.index + m[0].length);
+        var before = m.index > 0 ? _applyGenericColors(html.slice(0, m.index)) : '';
+        var after = _applyGenericColors(html.slice(m.index + m[0].length));
+        return before + rules[i].render(m) + after;
       }
     }
     return _applyGenericColors(html);
