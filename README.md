@@ -1,10 +1,13 @@
 # frontail — streaming logs to the browser
 
 [![Sponsor](https://img.shields.io/badge/Sponsor-%E2%9D%A4-ea4aaa?logo=githubsponsors&logoColor=white)](https://github.com/sponsors/hbenali)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-frontail.hbenali.ovh-4f8ef7)](https://frontail.hbenali.ovh/)
 
 > **This repository is a fork of [mthenw/frontail](https://github.com/mthenw/frontail) by [@hbenali](https://github.com/hbenali), extended with a modernised UI, richer features, and an updated Docker base image.**
 
 `frontail` is a Node.js application that streams log files to the browser — `tail -F` with a UI. Point it at any file (or stdin) and watch lines appear in real time.
+
+**[👉 Try the live demo](https://frontail.hbenali.ovh/)** — fake logs streaming continuously across every format frontail auto-colorizes (apache2/nginx, Tomcat, Log4j/Logback, syslog, ANSI-colored sources).
 
 ---
 
