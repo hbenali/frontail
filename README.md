@@ -44,7 +44,7 @@ docker run -d -p 9001:9001 -v /var/log:/log hbenali/frontail /log/syslog
 | **Timestamps** | Per-line `HH:MM:SS.ms` toggle |
 | **Mobile** | Full-screen sidebar sheet, no horizontal scroll, word-wrap forced, safe-area aware |
 | **Keyboard** | `Ctrl/Cmd+K` focus filter · `Space` pause · `Shift+G` jump to bottom · `Esc` clear |
-| **Docker** | Multi-stage build, Node 24 LTS on Debian Bookworm Slim, non-root user |
+| **Docker** | Multi-stage build, Node 24 LTS on Alpine, non-root user, hardened against known CVEs |
 
 ---
 
@@ -390,7 +390,7 @@ docker run -d \
 
 For more deployment shapes to try locally — Docker Compose (basic, multi-source, auth, container streaming via Docker/Podman, a real nginx reverse proxy, and more) and Kubernetes (sidecar pattern) — see [`test/compose`](test/compose) and [`test/k8s`](test/k8s).
 
-The image uses a **multi-stage build** (Node 24 LTS on Debian Bookworm Slim), includes `docker-ce-cli` for container streaming, and runs as a non-root `frontail` user. The entrypoint script adds the user to the docker group at runtime when `docker.sock` is mounted.
+The image uses a **multi-stage build** (Node 24 LTS on Alpine), includes `docker-cli` for container streaming, and runs as a non-root `frontail` user. The entrypoint script adds the user to the docker group at runtime when `docker.sock` is mounted. `docker-cli` is pulled from Alpine's edge repo to stay ahead of the pinned stable branch's CVE backports, and the base image's bundled npm/corepack/yarn (unused at runtime) are stripped out — between that and the Alpine switch, the published image carries far fewer known vulnerabilities than the previous Debian-based one.
 
 ---
 

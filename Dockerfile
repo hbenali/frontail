@@ -1,5 +1,5 @@
 # ── Stage 1: build ───────────────────────────────────────────────────────────
-FROM node:24-bookworm-slim AS builder
+FROM node:24-alpine AS builder
 
 WORKDIR /build
 
@@ -10,7 +10,7 @@ COPY package.json package-lock.json ./
 RUN npm ci --omit=dev --ignore-scripts
 
 # ── Stage 2: runtime ─────────────────────────────────────────────────────────
-FROM node:24-bookworm-slim AS runtime
+FROM node:24-alpine AS runtime
 
 # Passed at build time via --build-arg; see README's "Docker" section
 ARG FRONTAIL_VERSION=0.0.0-dev
@@ -26,21 +26,33 @@ LABEL org.opencontainers.image.title="frontail" \
       org.opencontainers.image.version="${FRONTAIL_VERSION}" \
       org.opencontainers.image.revision="${FRONTAIL_REVISION}"
 
-# Install docker CLI (lightweight, no daemon) for container log streaming
-# Also install gosu for privilege drop after docker socket group setup
-RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates curl gosu \
- && install -m 0755 -d /etc/apt/keyrings \
- && curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc \
- && chmod a+r /etc/apt/keyrings/docker.asc \
- && echo "deb [signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian bookworm stable" \
-      > /etc/apt/sources.list.d/docker.list \
- && apt-get update && apt-get install -y --no-install-recommends docker-ce-cli \
- && apt-get purge -y curl \
- && rm -rf /var/lib/apt/lists/*
+# Install docker CLI (lightweight, no daemon) for container log streaming.
+# su-exec is Alpine's minimal gosu equivalent, used for privilege drop after
+# docker socket group setup. docker-cli is pulled from Alpine edge: the
+# pinned stable release (3.24) only ships 29.5.3-r0, which carries several
+# fixed-upstream CVEs; edge already has 29.7.2-r0. Everything else stays on
+# the pinned stable base.
+RUN apk add --no-cache \
+      --repository=https://dl-cdn.alpinelinux.org/alpine/edge/community \
+      --repository=https://dl-cdn.alpinelinux.org/alpine/edge/main \
+      ca-certificates docker-cli su-exec
+
+# The base image bundles npm/corepack/yarn for building; this runtime image
+# only ever runs index.js directly, so drop them (also removes their
+# transitive CVEs from the image).
+RUN rm -rf \
+      /usr/local/lib/node_modules/npm \
+      /usr/local/lib/node_modules/corepack \
+      /usr/local/bin/npm \
+      /usr/local/bin/npx \
+      /usr/local/bin/corepack \
+      /opt/yarn-v* \
+      /usr/local/bin/yarn \
+      /usr/local/bin/yarnpkg
 
 # Security: run as non-root with fixed uid:gid
-RUN groupadd --gid 1001 frontail \
- && useradd  --uid 1001 --gid frontail --shell /bin/sh --create-home frontail
+RUN addgroup -g 1001 frontail \
+ && adduser -D -u 1001 -G frontail -s /bin/sh frontail
 
 WORKDIR /frontail
 
