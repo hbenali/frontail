@@ -220,7 +220,7 @@ To stream container logs from within the frontail Docker image, mount the Docker
 ```yaml
 # docker-compose.yml
 frontail:
-  image: hbenali/frontail:2.22
+  image: hbenali/frontail:2.23
   command: --container myapp /logs/syslog
   volumes:
     - /var/log:/logs:ro
@@ -365,7 +365,7 @@ docker build -t hbenali/frontail .
 docker buildx build --platform linux/amd64,linux/arm64 \
   --build-arg FRONTAIL_VERSION=$(node -p "require('./package.json').version") \
   --build-arg FRONTAIL_REVISION=$(git rev-parse HEAD) \
-  -t hbenali/frontail:2.22 -t hbenali/frontail:latest --push .
+  -t hbenali/frontail:2.23 -t hbenali/frontail:latest --push .
 
 # Run (file only)
 docker run -d \
