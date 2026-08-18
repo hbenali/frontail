@@ -50,7 +50,7 @@ if (program.daemonize) {
   /**
    * HTTP(s) server setup
    */
-  const appBuilder = connectBuilder(urlPath);
+  const appBuilder = connectBuilder(urlPath).health();
   if (doAuthorization) {
     appBuilder.session(sessionSecret, doSecure);
     appBuilder.authorize(program.user, program.password);

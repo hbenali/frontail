@@ -392,6 +392,24 @@ For more deployment shapes to try locally — Docker Compose (basic, multi-sourc
 
 The image uses a **multi-stage build** (Node 24 LTS on Alpine), includes `docker-cli` for container streaming, and runs as a non-root `frontail` user. The entrypoint script adds the user to the docker group at runtime when `docker.sock` is mounted. `docker-cli` is pulled from Alpine's edge repo to stay ahead of the pinned stable branch's CVE backports, and the base image's bundled npm/corepack/yarn (unused at runtime) are stripped out — between that and the Alpine switch, the published image carries far fewer known vulnerabilities than the previous Debian-based one.
 
+### Health check
+
+The image ships a built-in `HEALTHCHECK` that curls a fixed `/healthz` endpoint on port 9001 — it
+always returns `200 OK` regardless of `--url-path`/`--path` and never requires Basic Auth credentials,
+so it works out of the box with `docker ps`, Compose, Swarm, and Kubernetes probes alike. If you're
+writing your own healthcheck (e.g. in a `docker-compose.yml` that predates this), use:
+
+```yaml
+healthcheck:
+  test: ["CMD", "curl", "-fsS", "http://127.0.0.1:9001/healthz"]
+  interval: 30s
+  timeout: 5s
+  retries: 3
+```
+
+Note the image is Alpine-based (no `/bin/bash`), so a `CMD-SHELL` healthcheck relying on bash's
+`/dev/tcp/...` pseudo-device will fail with "unhealthy" — `curl` against `/healthz` is the supported way.
+
 ---
 
 ## Credits

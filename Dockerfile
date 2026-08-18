@@ -35,7 +35,7 @@ LABEL org.opencontainers.image.title="frontail" \
 RUN apk add --no-cache \
       --repository=https://dl-cdn.alpinelinux.org/alpine/edge/community \
       --repository=https://dl-cdn.alpinelinux.org/alpine/edge/main \
-      ca-certificates docker-cli su-exec
+      ca-certificates curl docker-cli su-exec
 
 # The base image bundles npm/corepack/yarn for building; this runtime image
 # only ever runs index.js directly, so drop them (also removes their
@@ -72,6 +72,9 @@ RUN chmod +x docker-entrypoint.sh bin/frontail
 USER root
 
 EXPOSE 9001
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
+  CMD curl -fsS http://127.0.0.1:9001/healthz || exit 1
 
 ENTRYPOINT ["/frontail/docker-entrypoint.sh"]
 CMD ["--help"]

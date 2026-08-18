@@ -10,6 +10,25 @@ describe('connectBuilder', () => {
     connectBuilder().build().should.have.property('listen');
   });
 
+  it('should respond OK on /healthz', (done) => {
+    const app = connectBuilder('/').health().build();
+
+    request(app)
+      .get('/healthz')
+      .expect(200, 'OK', done);
+  });
+
+  it('should respond on /healthz without authorization, even under a url-path', (done) => {
+    const app = connectBuilder('/some/path')
+      .health()
+      .authorize('user', 'pass')
+      .build();
+
+    request(app)
+      .get('/healthz')
+      .expect(200, 'OK', done);
+  });
+
   it('should build app requiring authorized user', (done) => {
     const app = connectBuilder('/').authorize('user', 'pass').build();
 
