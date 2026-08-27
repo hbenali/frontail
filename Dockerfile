@@ -32,10 +32,14 @@ LABEL org.opencontainers.image.title="frontail" \
 # pinned stable release (3.24) only ships 29.5.3-r0, which carries several
 # fixed-upstream CVEs; edge already has 29.7.2-r0. Everything else stays on
 # the pinned stable base.
+# coreutils replaces BusyBox's tail: BusyBox's `tail -F` never detects a
+# file truncated in place (e.g. logrotate's copytruncate) and keeps reading
+# from its stale byte offset, silently corrupting/stalling output — GNU
+# tail correctly detects the shrink and reopens from the start.
 RUN apk add --no-cache \
       --repository=https://dl-cdn.alpinelinux.org/alpine/edge/community \
       --repository=https://dl-cdn.alpinelinux.org/alpine/edge/main \
-      ca-certificates curl docker-cli su-exec
+      ca-certificates coreutils curl docker-cli su-exec
 
 # The base image bundles npm/corepack/yarn for building; this runtime image
 # only ever runs index.js directly, so drop them (also removes their
