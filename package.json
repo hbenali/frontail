@@ -32,7 +32,7 @@
     "socket.io": "4.8.3",
     "universal-analytics": "0.5.4",
     "untildify": "3.0.2",
-    "uuid": "14.0.1"
+    "uuid": "14.0.2"
   },
   "overrides": {
     "cookie": "0.7.2",
