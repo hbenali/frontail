@@ -1,40 +1,42 @@
 # Releasing Frontail
 
-After all [pull requests](https://github.com/mthenw/frontail/pulls) for a release have been merged and all [Travis CI builds](https://travis-ci.org/mthenw/frontail) are green, you may create a release as follows:
+Releases are driven by a git tag: pushing a tag makes GitHub Actions publish to npm, build and push
+the Docker image (Docker Hub + GHCR) and build the standalone binaries. Tags have **no `v` prefix**
+(`2.29`, not `v2.29`).
 
-1. If you haven't already, switch to the master branch, ensure that you have no changes, and pull from origin.
-
-    ```sh
-    $ git checkout master
-    $ git status
-    $ git pull <remote> master --rebase
-    ```
-
-1. Edit the `package.json` file changing `version` field to your new release version and run `npm i`.
-
-1. Commit your changes.
+1. Make sure `master` is up to date, clean, and CI is green.
 
     ```sh
-    $ git commit -am "Release <version>"
+    git checkout master && git pull --rebase origin master
+    npm test && npm run lint
     ```
 
-1. Push the commit.
+1. Bump the version and the image tags in the README, then commit and push.
 
     ```sh
-    $ git push origin head
+    npm version X.Y.Z --no-git-tag-version
+    sed -i 's#hbenali/frontail:<old>#hbenali/frontail:X.Y#g' README.md
+    git commit -am "chore: bump version to X.Y.Z"
+    git push origin master
     ```
 
-1. GitHub action will publish new version to NPM and push new tag.
-
-1. Publish new release on GitHub with [`release`](https://github.com/zeit/release) package.
+1. Tag and push the tag. This triggers the publish workflow.
 
     ```sh
-    $ git pull
-    $ npx release -P
+    git tag X.Y && git push origin X.Y
     ```
 
-1. Upload binaries
+1. Create the GitHub release (the `gh` token needs the `workflow` scope), with notes that call out
+   security fixes first.
 
     ```sh
-    $ npm run pkg
+    gh release create X.Y --verify-tag --title X.Y --notes "..."
     ```
+
+1. Verify the workflow finished and the artifacts exist: `npm view @hbenali/frontail version`, the
+   Docker job, and the five binaries attached to the release.
+
+1. Bump the base image pin in `Dockerfile.demo` (`FROM hbenali/frontail:X.Y@sha256:...`) in a
+   follow-up commit.
+
+To build binaries locally: `npm run pkg` (output in `dist/`).

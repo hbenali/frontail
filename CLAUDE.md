@@ -44,4 +44,4 @@ Run both `npm test` and `npm run lint` before committing; CI (`.github/workflows
 3. `gh release create 2.29 --verify-tag --notes ...` (the `gh` token needs the `workflow` scope).
 4. Afterwards `Dockerfile.demo` pins the base image (`FROM hbenali/frontail:X.Y@sha256:...`); a follow-up commit bumps that pin.
 
-`RELEASING.md` is stale (written for the upstream project); this section is authoritative.
+`RELEASING.md` describes the same procedure.
