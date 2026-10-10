@@ -122,6 +122,30 @@ describe('connectBuilder', () => {
     request(app).get('/').expect('<head><title>/testfile</title></head>', done);
   });
 
+  it('should HTML-escape the title and leave "$&" in file names intact', (done) => {
+    const app = connectBuilder('/')
+      .index(
+        path.join(__dirname, 'fixtures/index_with_title'),
+        '<script>alert(1)</script> a&b "$&"'
+      )
+      .build();
+
+    request(app)
+      .get('/')
+      .expect(
+        '<head><title>&lt;script&gt;alert(1)&lt;/script&gt; a&amp;b &quot;$&amp;&quot;</title></head>',
+        done
+      );
+  });
+
+  it('should respond 500 when the index file is missing', (done) => {
+    const app = connectBuilder('/')
+      .index(path.join(__dirname, 'fixtures/does-not-exist'), '/testfile')
+      .build();
+
+    request(app).get('/').expect(500, done);
+  });
+
   it('should build app that sets socket.io namespace based on files', (done) => {
     const app = connectBuilder('/')
       .index(
