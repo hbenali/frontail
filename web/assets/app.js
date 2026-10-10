@@ -1212,7 +1212,7 @@ window.App = (function app(window, document) {
             if (_logContainer) _logContainer.innerHTML = '';
             _totalLines = 0; _visibleLines = 0; _errorCount = 0; _warnCount = 0; _lineNumber = 0;
             _updateStats();
-            _showToast('Streaming from ' + (data.isContainer ? 'container' : 'file') + ' beginning…');
+            _showToast(data.isContainer ? 'Streaming logs from the beginning…' : 'Streaming from file beginning…');
           }
         })
         .on('read-end', function() {
