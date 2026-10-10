@@ -1,7 +1,7 @@
 'use strict';
 
 const fs = require('fs');
-const jsdom = require('jsdom/lib/old-api.js');
+const { JSDOM } = require('jsdom');
 const events = require('events');
 
 describe('browser application', () => {
@@ -50,22 +50,21 @@ describe('browser application', () => {
     const ansiup = fs.readFileSync('./web/assets/ansi_up.js', 'utf-8');
     const src = fs.readFileSync('./web/assets/app.js', 'utf-8');
 
-    jsdom.env({
-      html,
+    const dom = new JSDOM(html, {
       url: 'http://localhost?filter=line',
-      src: [ansiup, src],
-      onload: (domWindow) => {
-        window = domWindow;
-        window.matchMedia =
-          window.matchMedia ||
-          function matchMedia() {
-            return { matches: false, addListener: () => {}, removeListener: () => {} };
-          };
-
-        initApp();
-        done();
-      },
+      runScripts: 'outside-only',
     });
+    window = dom.window;
+    window.matchMedia =
+      window.matchMedia ||
+      function matchMedia() {
+        return { matches: false, addListener: () => {}, removeListener: () => {} };
+      };
+    window.eval(ansiup);
+    window.eval(src);
+
+    initApp();
+    done();
   });
 
   it('should show lines from socket.io', () => {
