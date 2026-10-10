@@ -129,6 +129,7 @@ Options:
   --ui-no-colors                disable log colorizing (ANSI + format autodetection), on by default
   --ui-colors-preset <path>     extra log colorizing rules JSON (see ./preset/colors-example.json)
   --path <path>                 prefix path (default: /)
+  --config <path>               JSON config file (option names + optional "files" array); CLI flags win
   --disable-usage-stats         deprecated, no-op (usage statistics were removed)
   --help                        output usage information
 
@@ -136,6 +137,30 @@ Author:  Houssem Ben Ali
 Website: https://github.com/hbenali/frontail
 Contact: contact@hbenali.ovh
 ```
+
+### Config file
+
+Instead of long command lines, put options in a JSON file and pass `--config frontail.json`.
+Keys are the option names (camelCase or kebab-case); `files` lists the logs to tail. Flags on the
+command line override the file.
+
+```json
+{
+  "port": 9001,
+  "theme": "dark",
+  "ui-highlight": true,
+  "user": "admin",
+  "passwordFile": "/run/secrets/frontail_password",
+  "files": ["/var/log/syslog", "/var/log/nginx/error.log"]
+}
+```
+
+### Security
+
+- Prefer `--password-file` or the `FRONTAIL_USER` / `FRONTAIL_PASSWORD` environment variables over `-P`: command-line arguments are visible to every local user via `ps`.
+- Basic Auth sends credentials in clear text. Serve over HTTPS (`-k` / `-c`) or put frontail behind a TLS-terminating reverse proxy.
+- Bind to `127.0.0.1` (`-h 127.0.0.1`) when a reverse proxy is in front.
+- Responses carry `X-Content-Type-Options`, `X-Frame-Options` and `Referrer-Policy` headers.
 
 Web interface: **http://[host]:[port]**
 

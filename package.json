@@ -8,6 +8,9 @@
     "Maciej Winnicki <maciej.winnicki@gmail.com> (original author, https://github.com/mthenw/frontail)"
   ],
   "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
   "bin": {
     "frontail": "bin/frontail"
   },
