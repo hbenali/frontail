@@ -3,6 +3,8 @@
 const daemon = require('daemon-fix41');
 const sinon = require('sinon');
 const fs = require('fs');
+const os = require('os');
+const path = require('path');
 const optionsParser = require('../lib/options_parser');
 const daemonize = require('../lib/daemonize');
 
@@ -190,6 +192,72 @@ describe('daemonize', () => {
       daemon.daemon.lastCall.args[1].should.containDeep(['--ui-no-indent']);
     });
 
+    it('without no-indent option by default', () => {
+      daemonize('script', opts);
+
+      daemon.daemon.lastCall.args[1].should.not.containEql('--ui-no-indent');
+    });
+
+    it('with no-colors option', () => {
+      opts = optionsParser(['node', '/path/to/frontail', '--ui-no-colors', 'a.log']);
+
+      daemonize('script', opts);
+
+      daemon.daemon.lastCall.args[1].should.containDeep(['--ui-no-colors']);
+    });
+
+    it('with colors preset option', () => {
+      opts = optionsParser([
+        'node',
+        '/path/to/frontail',
+        '--ui-colors-preset',
+        'colors.json',
+        'a.log',
+      ]);
+
+      daemonize('script', opts);
+
+      daemon.daemon.lastCall.args[1].should.containDeep([
+        '--ui-colors-preset',
+        'colors.json',
+      ]);
+    });
+
+    it('with containers and engine', () => {
+      opts = optionsParser([
+        'node',
+        '/path/to/frontail',
+        '-C',
+        'web',
+        '-C',
+        'db',
+        '--container-engine',
+        'podman',
+      ]);
+
+      daemonize('script', opts);
+
+      const args = daemon.daemon.lastCall.args[1];
+      args.should.containDeep(['-C', 'web', '-C', 'db']);
+      args.should.containDeep(['--container-engine', 'podman']);
+    });
+
+    it('with files from a --config file', () => {
+      const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'frontail-dcfg-'));
+      const file = path.join(dir, 'c.json');
+      fs.writeFileSync.restore();
+      fs.writeFileSync(file, JSON.stringify({ theme: 'dark', files: ['/x.log'] }));
+      sinon.stub(fs, 'writeFileSync');
+
+      opts = optionsParser(['node', '/path/to/frontail', '--config', file]);
+      daemonize('script', opts);
+      fs.rmSync(dir, { recursive: true, force: true });
+
+      const args = daemon.daemon.lastCall.args[1];
+      args.should.containDeep(['-t', 'dark']);
+      args.should.containEql('/x.log');
+    });
+
     it('with highlight option', () => {
       opts = optionsParser(['node', '/path/to/frontail', '--ui-highlight']);
 
@@ -235,7 +303,7 @@ describe('daemonize', () => {
     daemonize('script', opts);
 
     fs.writeFileSync.lastCall.args[0].should.be.equal('/path/to/pid');
-    fs.writeFileSync.lastCall.args[1].should.be.equal(1000);
+    fs.writeFileSync.lastCall.args[1].should.be.equal('1000');
   });
 
   it('should log to file', () => {
