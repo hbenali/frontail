@@ -45,7 +45,7 @@ if (program.daemonize) {
   /**
    * HTTP(s) server setup
    */
-  const appBuilder = connectBuilder(urlPath).health();
+  const appBuilder = connectBuilder(urlPath).health().securityHeaders();
   if (doAuthorization) {
     appBuilder.session(sessionSecret, doSecure);
     appBuilder.authorize(credentials.user, credentials.password);
@@ -240,7 +240,10 @@ if (program.daemonize) {
    * Handle signals
    */
   const cleanExit = () => {
-    process.exit();
+    // Stop accepting connections and let sockets drain; force-quit if
+    // something (e.g. a stuck client) keeps the process alive.
+    setTimeout(() => process.exit(), 5000).unref();
+    io.close(() => process.exit());
   };
   process.on('SIGINT', cleanExit);
   process.on('SIGTERM', cleanExit);

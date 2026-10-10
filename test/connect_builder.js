@@ -29,6 +29,18 @@ describe('connectBuilder', () => {
       .expect(200, 'OK', done);
   });
 
+  it('should set security headers', (done) => {
+    const app = connectBuilder('/').securityHeaders().build();
+    app.use((req, res) => res.end('ok'));
+
+    request(app)
+      .get('/')
+      .expect('x-content-type-options', 'nosniff')
+      .expect('x-frame-options', 'SAMEORIGIN')
+      .expect('referrer-policy', 'no-referrer')
+      .expect(200, done);
+  });
+
   it('should build app requiring authorized user', (done) => {
     const app = connectBuilder('/').authorize('user', 'pass').build();
 
