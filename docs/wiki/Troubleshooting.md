@@ -5,7 +5,7 @@
 1. **Look at the log view first.** Problems reading a source are shown there as `[frontail] <source>: <reason>`:
    - `cannot open ... Permission denied`: the user running frontail can't read the file. `ls -l` it; add the user to the file's group (often `adm`), or fix the file's mode. In Docker the process is a non-root user, so a root-only host file fails the same way.
    - `cannot open ... No such file or directory`: wrong path. frontail keeps waiting and starts streaming if the file appears later.
-   - `ssh exited with code N`: the SSH connection failed or dropped (see below).
+   - `ssh exited with code N; reconnecting in Ns`: the SSH connection failed or dropped (see below).
 2. **Check the server's own output.** Run it in the foreground and read stderr.
 3. **Behind a reverse proxy?** See "Log view empty behind a proxy".
 
@@ -30,7 +30,7 @@ Two usual causes:
 
 - `Permission denied (publickey...)`: ssh never prompts (`BatchMode=yes`). Set up key auth for the user running frontail, and make sure the host key is already trusted (`ssh host true` once by hand).
 - `Could not resolve hostname`, `Connection timed out`: network or DNS. The connect timeout is 10 s.
-- `ssh exited with code N; no more lines will arrive`: the session dropped. frontail does not reconnect; restart it, or use a supervisor.
+- `ssh exited with code N; reconnecting in Ns`: the session dropped and frontail is retrying with backoff (up to once a minute). If it never recovers, check the same causes as above (keys, host key, network).
 - Ports, keys and jump hosts come from `~/.ssh/config`.
 
 ## Colors are off

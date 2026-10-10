@@ -47,7 +47,7 @@ Run `npm test`, `npm run lint` and `npm run typecheck` before committing; CI (`.
 ## Releasing
 
 1. Bump `version` in `package.json` (`npm version X.Y.Z --no-git-tag-version`) and the image tags in `README.md`; commit `chore: bump version to X.Y.Z`; push to `master`.
-2. Tag **without** a `v` prefix (`git tag 2.29 && git push origin 2.29`): the tag triggers npm publish, Docker (Docker Hub + GHCR) and binary builds.
+2. Create a **signed** tag, **without** a `v` prefix (`git tag -s 2.29 -m 2.29 && git push origin 2.29`): the tag triggers npm publish, Docker (Docker Hub + GHCR) and binary builds.
 3. `gh release create 2.29 --verify-tag --notes ...` (the `gh` token needs the `workflow` scope).
 4. Afterwards `Dockerfile.demo` pins the base image (`FROM hbenali/frontail:X.Y@sha256:...`); a follow-up commit bumps that pin.
 

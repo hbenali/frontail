@@ -37,7 +37,7 @@ These wiki pages live in `docs/wiki/` and are published to the wiki automaticall
 ## Releasing
 
 1. Make sure `master` is green. Bump the version: `npm version X.Y.Z --no-git-tag-version`, update the image tags in the README, commit `chore: bump version to X.Y.Z`, push.
-2. Tag **without** a `v` prefix and push the tag: `git tag X.Y && git push origin X.Y`. The tag triggers the npm publish, the Docker images (Docker Hub and GHCR) and the standalone binaries.
+2. Create a **signed** tag **without** a `v` prefix and push it: `git tag -s X.Y -m "X.Y" && git push origin X.Y`. The tag triggers the npm publish, the Docker images (Docker Hub and GHCR) and the standalone binaries.
 3. Create the GitHub release with notes, security fixes first: `gh release create X.Y --verify-tag ...`.
 4. Verify: `npm view @hbenali/frontail version`, the workflow run, and the five binaries on the release.
 5. Bump the base-image pin in `Dockerfile.demo` in a follow-up commit.

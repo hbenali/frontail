@@ -20,10 +20,10 @@ the Docker image (Docker Hub + GHCR) and build the standalone binaries. Tags hav
     git push origin master
     ```
 
-1. Tag and push the tag. This triggers the publish workflow.
+1. Create a **signed** tag (`-s`; plain `git tag` makes an unsigned one) and push it. This triggers the publish workflow.
 
     ```sh
-    git tag X.Y && git push origin X.Y
+    git tag -s X.Y -m "X.Y" && git push origin X.Y
     ```
 
 1. Create the GitHub release (the `gh` token needs the `workflow` scope), with notes that call out

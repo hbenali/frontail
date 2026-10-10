@@ -216,4 +216,132 @@ describe('tail', () => {
       done();
     }, 50);
   });
+
+  describe('command source reconnect', () => {
+    const childProcess = require('child_process');
+    const { PassThrough } = require('stream');
+    const { EventEmitter } = require('events');
+    const sinon = require('sinon');
+
+    let spawn;
+    let children;
+
+    const fakeChild = () => {
+      const cp = new EventEmitter();
+      cp.stdout = new PassThrough();
+      cp.stderr = new PassThrough();
+      cp.kill = () => {};
+      children.push(cp);
+      return cp;
+    };
+
+    beforeEach(() => {
+      children = [];
+      spawn = sinon.stub(childProcess, 'spawn').callsFake(fakeChild);
+    });
+
+    afterEach(() => {
+      spawn.restore();
+    });
+
+    const opts = { buffer: 5, journal: true, reconnectBaseMs: 20, reconnectMaxMs: 80 };
+
+    it('restarts a source that exits, resuming without replaying lines', (done) => {
+      const tailer = makeTail([], opts);
+      const errors = [];
+      tailer.on('error', (e) => errors.push(e));
+
+      spawn.callCount.should.equal(1);
+      spawn.firstCall.args[1].should.containDeep(['-n', '5']);
+
+      children[0].emit('close', 255);
+
+      setTimeout(() => {
+        spawn.callCount.should.equal(2);
+        spawn.secondCall.args[1].should.containDeep(['-n', '0']);
+        errors[0].message.should.match(/exited with code 255; reconnecting in/);
+        done();
+      }, 80);
+    });
+
+    it('streams lines from the restarted process', (done) => {
+      const tailer = makeTail([], opts);
+      const lines = [];
+      tailer.on('line', (l) => lines.push(l.t));
+
+      children[0].emit('close', 1);
+
+      setTimeout(() => {
+        children[1].stdout.write('after reconnect\n');
+        setTimeout(() => {
+          lines.should.eql(['after reconnect']);
+          done();
+        }, 30);
+      }, 60);
+    });
+
+    it('keeps blank lines in the middle but drops the one flushed at stream end', (done) => {
+      const tailer = makeTail([], opts);
+      const lines = [];
+      tailer.on('line', (l) => lines.push(l.t));
+
+      children[0].stdout.write('a\n\nb\n');
+      children[0].stdout.end();
+
+      setTimeout(() => {
+        lines.should.eql(['a', '', 'b']);
+        done();
+      }, 40);
+    });
+
+    it('backs off exponentially, up to the maximum', (done) => {
+      const times = [];
+      // Every process dies right after starting.
+      spawn.callsFake(() => {
+        times.push(Date.now());
+        const cp = fakeChild();
+        setImmediate(() => cp.emit('close', 1));
+        return cp;
+      });
+      makeTail([], opts); // delays: 20ms, 40ms, 80ms, then capped at 80ms
+
+      setTimeout(() => {
+        const gaps = times.slice(1).map((t, i) => t - times[i]);
+        gaps.length.should.be.aboveOrEqual(4);
+        gaps[1].should.be.above(gaps[0]); // growing
+        gaps[2].should.be.above(gaps[1]);
+        gaps[3].should.be.below(gaps[2] + 40); // capped, not doubling again
+        gaps[3].should.be.below(160);
+        done();
+      }, 600);
+    });
+
+    it('does not retry when the program cannot be started', (done) => {
+      const tailer = makeTail([], opts);
+      const errors = [];
+      tailer.on('error', (e) => errors.push(e));
+
+      const err = new Error('spawn journalctl ENOENT');
+      children[0].emit('error', err);
+      children[0].emit('close', -2);
+
+      setTimeout(() => {
+        spawn.callCount.should.equal(1);
+        errors.should.have.length(1);
+        errors[0].message.should.match(/Failed to run journalctl/);
+        done();
+      }, 100);
+    });
+
+    it('stops retrying once closed', (done) => {
+      const tailer = makeTail([], opts);
+      children[0].emit('close', 1);
+      tailer.close();
+
+      setTimeout(() => {
+        spawn.callCount.should.equal(1);
+        done();
+      }, 100);
+    });
+  });
 });

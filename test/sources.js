@@ -56,11 +56,27 @@ describe('command sources', () => {
         'BatchMode=yes',
         '-o',
         'ConnectTimeout=10',
+        '-o',
+        'ServerAliveInterval=15',
+        '-o',
+        'ServerAliveCountMax=3',
         '--',
         'root@web1',
         "tail -n 10 -F '/var/log/syslog'",
       ]);
       source.read.args.slice(-2).should.eql(['root@web1', "cat '/var/log/syslog'"]);
+    });
+
+    it('resumes with -n 0 so a reconnect does not replay lines', () => {
+      sshSource('web1:/var/log/syslog', 10)
+        .resume.args.slice(-1)[0]
+        .should.equal("tail -n 0 -F '/var/log/syslog'");
+      commandSources({ journal: true }, 10)[0].resume.args.should.eql([
+        '--no-pager',
+        '-f',
+        '-n',
+        '0',
+      ]);
     });
 
     it('accepts hosts, IPv4 and bracketed IPv6 with or without a user', () => {
@@ -86,7 +102,7 @@ describe('command sources', () => {
     it('single-quotes the remote path so it cannot inject remote commands', () => {
       const source = sshSource("web1:/var/log/a'; rm -rf /; echo '.log", 5);
 
-      source.follow.args[6].should.equal(
+      source.follow.args[10].should.equal(
         "tail -n 5 -F '/var/log/a'\\''; rm -rf /; echo '\\''.log'"
       );
       shellQuote("it's").should.equal("'it'\\''s'");

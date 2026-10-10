@@ -48,7 +48,8 @@ frontail --ssh deploy@web1:/var/log/syslog --ssh deploy@web2:/var/log/nginx/erro
 
 - Uses your normal `~/.ssh/config` (ports, keys, jump hosts) with `BatchMode=yes`: ssh never prompts, so keys must be set up and the host key already trusted.
 - The remote path must be absolute. frontail validates the host and quotes the path so a hostile value can't inject ssh options or remote commands.
-- If the session drops, the view says `ssh exited with code N; no more lines will arrive`. frontail does not reconnect automatically.
+- If the session drops, the view says `ssh exited with code N; reconnecting in Ns` and frontail reconnects with exponential backoff (2 s, 4 s, ... up to 60 s; back to 2 s after a connection that lasted 30 s). Reconnects use `-n 0`, so lines already shown aren't repeated; anything written while the link was down is not replayed. Keepalives (`ServerAliveInterval=15`) make a silently dead connection get noticed within about a minute.
+- The same reconnect applies to `--journal`. If a program isn't installed (`Failed to run ssh: ... ENOENT`) frontail doesn't retry.
 
 ## Mixing sources
 
