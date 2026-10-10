@@ -36,10 +36,12 @@ LABEL org.opencontainers.image.title="frontail" \
 # file truncated in place (e.g. logrotate's copytruncate) and keeps reading
 # from its stale byte offset, silently corrupting/stalling output — GNU
 # tail correctly detects the shrink and reopens from the start.
-RUN apk add --no-cache \
+# zlib is listed explicitly with --upgrade so the image gets the newest
+# patched build (CVE-2026-85091 is fixed in 1.3.2-r1; the base ships -r0).
+RUN apk add --no-cache --upgrade \
       --repository=https://dl-cdn.alpinelinux.org/alpine/edge/community \
       --repository=https://dl-cdn.alpinelinux.org/alpine/edge/main \
-      ca-certificates coreutils curl docker-cli su-exec
+      ca-certificates coreutils curl docker-cli su-exec zlib
 
 # The base image bundles npm/corepack/yarn for building; this runtime image
 # only ever runs index.js directly, so drop them (also removes their
@@ -73,6 +75,8 @@ COPY docker-entrypoint.sh ./
 RUN chmod +x docker-entrypoint.sh bin/frontail
 
 # Run entrypoint as root so it can set up docker group, then drop to frontail
+# (su-exec in docker-entrypoint.sh). Trivy DS-0002 is a documented exception,
+# see .trivyignore.yaml.
 USER root
 
 EXPOSE 9001

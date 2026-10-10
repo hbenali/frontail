@@ -11,6 +11,8 @@ FROM hbenali/frontail:2.31@sha256:4d3265038c6058deb852198bcb765b85700495ec83c520
 LABEL org.opencontainers.image.title="frontail-demo" \
       org.opencontainers.image.description="Public frontail demo with fake, continuously-generated logs"
 
+# Needed to seed /demo and chown it; the entrypoint still drops to the
+# frontail user via su-exec. Trivy DS-0002 exception: see .trivyignore.yaml.
 USER root
 
 COPY demo/seed/ /frontail/demo/seed/

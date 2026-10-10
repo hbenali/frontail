@@ -1,0 +1,10 @@
+# Documented Trivy exceptions. Everything else is reported.
+misconfigurations:
+  - id: DS-0002
+    paths:
+      - Dockerfile
+      - Dockerfile.demo
+    statement: >-
+      The entrypoint has to start as root to add the frontail user to the
+      group that owns a mounted docker.sock, then drops privileges with
+      su-exec before running frontail. The server never runs as root.

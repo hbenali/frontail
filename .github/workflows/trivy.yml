@@ -41,6 +41,7 @@ jobs:
           ignore-unfixed: true
           # Example manifests/compose files intentionally run simply
           skip-dirs: test,docs
+          trivyignores: .trivyignore.yaml
           format: sarif
           output: trivy-fs.sarif
           limit-severities-for-sarif: true
@@ -48,6 +49,9 @@ jobs:
 
       - name: Scan (readable report)
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        env:
+          # Only findings, not a row per clean package
+          TRIVY_TABLE_MODE: detailed
         with:
           scan-type: fs
           scan-ref: .
@@ -55,6 +59,7 @@ jobs:
           severity: MEDIUM,HIGH,CRITICAL
           ignore-unfixed: true
           skip-dirs: test,docs
+          trivyignores: .trivyignore.yaml
           format: table
           output: trivy-fs.txt
           hide-progress: true
@@ -118,6 +123,9 @@ jobs:
 
       - name: Scan (readable report)
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        env:
+          # Only findings, not a row per clean package
+          TRIVY_TABLE_MODE: detailed
         with:
           image-ref: frontail:scan
           scanners: vuln,secret
