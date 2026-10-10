@@ -15,9 +15,9 @@ Requires Node 22.12+. Run `npm test`, `npm run lint` and `npm run typecheck` bef
 
 ## Architecture in one minute
 
-- `index.js`: wiring. Parses options, builds the HTTP app, attaches socket.io, streams lines to browsers.
+- `index.js`: a small entry point (parse options, then start or daemonize). `lib/frontail.js` builds and starts the server (`start()` returns a handle with `close()`, so tests can run it in-process); `lib/log_socket.js` holds the per-browser socket logic.
 - `lib/options_parser.js`: commander options and `--config`. `lib/credentials.js`: Basic Auth sources.
-- `lib/connect_builder.js`: middleware (health, security headers, auth, metrics, static, index, downloads).
+- `lib/connect_builder.js`: middleware (health, security headers, auth, metrics, static, index); `lib/downloads.js`: the download endpoints; `lib/session_auth.js`: socket authentication.
 - `lib/tail.js` + `lib/sources.js`: spawn `tail -F`, container engines, `journalctl` and `ssh`, and keep the line buffer.
 - `lib/origin.js`, `lib/metrics.js`, `lib/daemonize.js`: Origin check, Prometheus registry, daemon mode.
 - `web/assets/app.js`: the browser UI (one file, no build step). `web/assets/formats.js`: log-format detection and colorizing, a pure module that also runs in Node tests.

@@ -18,7 +18,11 @@ Run `npm test`, `npm run lint` and `npm run typecheck` before committing; CI (`.
 
 ## Layout
 
-- `bin/frontail` -> `index.js`: wiring only. Parses options, builds the HTTP app, attaches socket.io, streams `tail` lines to clients.
+- `bin/frontail` -> `index.js`: a ~40-line entry point: parse options, validate, then daemonize or `start()` and handle SIGINT/SIGTERM.
+- `lib/frontail.js`: `resolveSettings(program)` (credentials, namespace, TLS/auth flags, command sources) and `start(program)`, which builds the HTTP app, socket.io, the tailer and the log socket and returns `{ server, io, tailer, metrics, close() }`. Tests can start it in-process (`-p 0`), see `test/frontail.js`.
+- `lib/log_socket.js`: the per-browser socket logic (options/buffer/errors on connect, `read-from-start`, one read per socket, cleanup on disconnect).
+- `lib/session_auth.js`: socket.io auth middleware (see gotchas). `lib/presets.js`: highlight/colors preset loading. `lib/constants.js`: shared constants.
+- `lib/downloads.js`: `/file-info` and `/download` handlers (files, containers, journal/ssh, sanitize).
 - `lib/options_parser.js`: commander. Exports `(argv) => options object` (plus `args`), a fresh `Command` per call. Also loads `--config` JSON (CLI flags win; unknown keys throw).
 - `lib/metrics.js`: tiny Prometheus text registry behind `--metrics` (`/metrics`, mounted after auth in `connect_builder.js`).
 - `lib/origin.js`: Origin check for socket.io handshakes (CSWSH guard); `--allowed-origin` extends it.
