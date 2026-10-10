@@ -36,11 +36,11 @@
     "on-headers": "1.1.0"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@yao-pkg/pkg": "^6.22.0",
-    "eslint": "~6.8.0",
-    "eslint-config-airbnb-base": "~14.0.0",
-    "eslint-config-prettier": "^6.10.1",
-    "eslint-plugin-import": "~2.20.0",
+    "eslint": "^10.12.0",
+    "eslint-config-prettier": "^10.1.8",
+    "globals": "^17.13.0",
     "jsdom": "~11.12.0",
     "mocha": "~12.0.2",
     "should": "~3.3.2",
@@ -64,50 +64,6 @@
       "node22-macos-x64",
       "node22-macos-arm64",
       "node22-win-x64"
-    ]
-  },
-  "eslintConfig": {
-    "extends": [
-      "airbnb-base",
-      "prettier"
-    ],
-    "rules": {
-      "no-console": "off",
-      "strict": "off",
-      "implicit-arrow-linebreak": "off"
-    },
-    "env": {
-      "node": true
-    },
-    "ignorePatterns": [
-      "web/assets/tinycon.min.js",
-      "web/assets/ansi_up.js"
-    ],
-    "overrides": [
-      {
-        "files": [
-          "web/assets/app.js"
-        ],
-        "env": {
-          "node": false,
-          "browser": true
-        },
-        "rules": {
-          "no-var": "off",
-          "vars-on-top": "off",
-          "one-var": "off",
-          "prefer-const": "off",
-          "prefer-template": "off",
-          "func-names": "off",
-          "no-plusplus": "off",
-          "no-underscore-dangle": "off",
-          "no-param-reassign": "off",
-          "consistent-return": "off",
-          "no-use-before-define": "off",
-          "no-continue": "off",
-          "no-restricted-syntax": "off"
-        }
-      }
     ]
   },
   "prettier": {

@@ -50,7 +50,7 @@ window.App = (function app(window, document) {
     try {
       var raw = localStorage.getItem(STORAGE_KEY);
       return raw ? JSON.parse(raw) : {};
-    } catch(e) { return {}; }
+    } catch { return {}; }
   }
 
   function _saveSettings(patch) {
@@ -58,7 +58,7 @@ window.App = (function app(window, document) {
       var current = _loadSettings();
       var merged  = { ...current, ...patch};
       localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
-    } catch (e) { /* localStorage unavailable (private browsing, quota, etc.) */ }
+    } catch { /* localStorage unavailable (private browsing, quota, etc.) */ }
   }
 
   // DOM refs
@@ -228,7 +228,7 @@ window.App = (function app(window, document) {
     var trimmed = raw.trim();
     if (trimmed.charAt(0) !== '{' || trimmed.charAt(trimmed.length - 1) !== '}') return null;
     var obj;
-    try { obj = JSON.parse(trimmed); } catch (e) { return null; }
+    try { obj = JSON.parse(trimmed); } catch { return null; }
     if (!obj || typeof obj !== 'object' || Array.isArray(obj)) return null;
     var keys = Object.keys(obj);
     if (!keys.length) return null;
@@ -326,7 +326,7 @@ window.App = (function app(window, document) {
     var regex;
     try {
       regex = new RegExp(spec.regex, spec.flags || '');
-    } catch (e) { return null; }
+    } catch { return null; }
     var {template} = spec;
     return {
       regex,
@@ -401,7 +401,7 @@ window.App = (function app(window, document) {
     try {
       var pattern = _regexMode ? _filterValue : _escapeRegExp(_filterValue);
       return new RegExp(pattern, _caseSensitive ? '' : 'i');
-    } catch(e) { return null; }
+    } catch { return null; }
   }
 
   function _lineMatchesFilter(text) {
@@ -932,7 +932,7 @@ window.App = (function app(window, document) {
     if (!_audioCtx) {
       try {
         _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      } catch(e) { return null; }
+      } catch { return null; }
     }
     return _audioCtx;
   }

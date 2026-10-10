@@ -207,7 +207,7 @@ if (program.daemonize) {
       if (!filePath) return;
 
       let stat;
-      try { stat = fs.statSync(filePath); } catch (_) { return; }
+      try { stat = fs.statSync(filePath); } catch { return; }
 
       const tooLarge = stat.size > FILE_SIZE_WARNING_BYTES;
 
