@@ -101,6 +101,22 @@ describe('socket.io authorization', function socketAuth() {
     (await connect()).should.equal('No cookie in header');
   });
 
+  it('rejects a bare, unsigned cookie', async () => {
+    (await connect('connect.sid=anything')).should.equal('Invalid cookie');
+  });
+
+  it('does not hand a session cookie to a visitor who failed Basic Auth', async () => {
+    const res = await new Promise((resolve, reject) => {
+      http.get(base, (r) => {
+        r.resume();
+        r.on('end', () => resolve(r));
+      }).on('error', reject);
+    });
+
+    res.statusCode.should.equal(401);
+    (res.headers['set-cookie'] === undefined).should.be.true;
+  });
+
   it('rejects a connection with a forged cookie', async () => {
     (await connect('connect.sid=s%3Aforged.sig')).should.equal(
       'Invalid cookie'

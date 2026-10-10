@@ -1,7 +1,6 @@
 'use strict';
 
-const { parseCookie } = require('cookie');
-const cookieParser = require('cookie-parser');
+const expressSession = require('express-session');
 const crypto = require('crypto');
 const path = require('path');
 const { Server } = require('socket.io');
@@ -14,6 +13,7 @@ const serverBuilder = require('./lib/server_builder');
 const daemonize = require('./lib/daemonize');
 const resolveCredentials = require('./lib/credentials');
 const isOriginAllowed = require('./lib/origin');
+const createSessionAuth = require('./lib/session_auth');
 const createMetrics = require('./lib/metrics');
 const createReadLimiter = require('./lib/read_limiter');
 const { commandSources } = require('./lib/sources');
@@ -49,6 +49,7 @@ const credentials = resolveCredentials(program);
 const doAuthorization = !!(credentials.user && credentials.password);
 const doSecure = !!(program.key && program.certificate);
 const sessionSecret = crypto.randomBytes(32).toString('hex');
+const sessionStore = new expressSession.MemoryStore();
 const files = []
   .concat(program.args)
   .concat(program.container)
@@ -69,7 +70,7 @@ if (program.daemonize) {
    */
   const appBuilder = connectBuilder(urlPath).health().securityHeaders();
   if (doAuthorization) {
-    appBuilder.session(sessionSecret, doSecure);
+    appBuilder.session(sessionSecret, doSecure, sessionStore);
     appBuilder.authorize(credentials.user, credentials.password);
   }
   const metrics = createMetrics(pkg.version);
@@ -126,26 +127,7 @@ if (program.daemonize) {
 
   // socket.io middleware registered on `io` only guards the main "/"
   // namespace, so it must also be applied to the log namespace below.
-  const requireSession = (socket, next) => {
-    const handshakeData = socket.request;
-    if (handshakeData.headers.cookie) {
-      const cookies = parseCookie(handshakeData.headers.cookie);
-      const sessionIdEncoded = cookies['connect.sid'];
-      if (!sessionIdEncoded) {
-        return next(new Error('Session cookie not provided'), false);
-      }
-      const sessionId = cookieParser.signedCookie(
-        sessionIdEncoded,
-        sessionSecret
-      );
-      if (sessionId) {
-        return next(null);
-      }
-      return next(new Error('Invalid cookie'), false);
-    }
-
-    return next(new Error('No cookie in header'), false);
-  };
+  const requireSession = createSessionAuth(sessionSecret, sessionStore);
 
   if (doAuthorization) {
     io.use(requireSession);

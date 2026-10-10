@@ -94,15 +94,57 @@ describe('connectBuilder', () => {
       .expect(200, 'secret!', done);
   });
 
-  it('should build app that setup session', (done) => {
+  it('should only create a session once it is used', (done) => {
     const app = connectBuilder('/').session('secret').build();
     app.use((req, res) => {
+      req.session.something = true;
       res.end();
     });
 
     request(app)
       .get('/')
-      .expect('set-cookie', /^connect.sid/, done);
+      .expect('set-cookie', /^connect.sid/)
+      .expect('set-cookie', /HttpOnly/)
+      .expect('set-cookie', /SameSite=Lax/, done);
+  });
+
+  it('should not hand out a session cookie to untouched requests', (done) => {
+    const app = connectBuilder('/').session('secret').build();
+    app.use((req, res) => res.end());
+
+    request(app).get('/').end((err, res) => {
+      (res.headers['set-cookie'] === undefined).should.be.true;
+      done(err);
+    });
+  });
+
+  it('should mark the session authenticated only after Basic Auth passes', (done) => {
+    const store = new (require('express-session').MemoryStore)();
+    const app = connectBuilder('/')
+      .session('secret', false, store)
+      .authorize('user', 'pass')
+      .build();
+    app.use((req, res) => res.end());
+
+    // failed Basic Auth: 401 and no session at all
+    request(app).get('/').end((err1, bad) => {
+      bad.status.should.equal(401);
+      (bad.headers['set-cookie'] === undefined).should.be.true;
+
+      request(app)
+        .get('/')
+        .set('Authorization', 'Basic dXNlcjpwYXNz')
+        .expect(200)
+        .end((err2, good) => {
+          const cookie = decodeURIComponent(good.headers['set-cookie'][0]);
+          const sid = cookie.match(/^connect\.sid=s:([^.]+)\./)[1];
+
+          store.get(sid, (e, session) => {
+            session.authenticated.should.equal(true);
+            done(err2 || e);
+          });
+        });
+    });
   });
 
   it('should build app that serve static files', (done) => {
