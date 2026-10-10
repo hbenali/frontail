@@ -178,11 +178,14 @@ if (program.daemonize) {
       socket.emit('options:hide-topbar');
     }
 
-    if (!program.uiNoIndent) {
+    // These flags are plain booleans (unset unless passed). Commander < 4
+    // treated any "-no-" flag as a negation defaulting to true, which the
+    // old inverted checks relied on.
+    if (program.uiNoIndent) {
       socket.emit('options:no-indent');
     }
 
-    if (!program.uiNoColors) {
+    if (program.uiNoColors) {
       socket.emit('options:no-colors');
     }
 
