@@ -130,6 +130,7 @@ Options:
   --ui-colors-preset <path>     extra log colorizing rules JSON (see ./preset/colors-example.json)
   --path <path>                 prefix path (default: /)
   --allowed-origin <origin>     extra browser origin allowed to open the socket (repeatable); same-host origins always are
+  --metrics                     expose Prometheus metrics at <url-path>/metrics
   --config <path>               JSON config file (option names + optional "files" array); CLI flags win
   --disable-usage-stats         deprecated, no-op (usage statistics were removed)
   --help                        output usage information
@@ -154,6 +155,26 @@ command line override the file.
   "passwordFile": "/run/secrets/frontail_password",
   "files": ["/var/log/syslog", "/var/log/nginx/error.log"]
 }
+```
+
+### Metrics
+
+`--metrics` exposes Prometheus metrics at `/metrics` (under `--url-path`, behind Basic Auth when `-U`/`-P` are set):
+
+| Metric | Type | |
+| --- | --- | --- |
+| `frontail_build_info{version}` | gauge | always 1 |
+| `frontail_uptime_seconds` | gauge | |
+| `frontail_connected_clients` | gauge | browsers on the log socket |
+| `frontail_sources` | gauge | files + containers |
+| `frontail_lines_total{source}` | counter | lines read per source |
+| `frontail_tail_errors_total` | counter | tail / container-engine errors |
+
+```yaml
+scrape_configs:
+  - job_name: frontail
+    static_configs: [{ targets: ['frontail:9001'] }]
+    # basic_auth: { username: admin, password_file: /etc/prometheus/frontail_pw }
 ```
 
 ### Security

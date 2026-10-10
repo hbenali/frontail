@@ -14,6 +14,7 @@ const serverBuilder = require('./lib/server_builder');
 const daemonize = require('./lib/daemonize');
 const resolveCredentials = require('./lib/credentials');
 const isOriginAllowed = require('./lib/origin');
+const createMetrics = require('./lib/metrics');
 const pkg = require('./package.json');
 
 /**
@@ -50,6 +51,10 @@ if (program.daemonize) {
   if (doAuthorization) {
     appBuilder.session(sessionSecret, doSecure);
     appBuilder.authorize(credentials.user, credentials.password);
+  }
+  const metrics = createMetrics(pkg.version);
+  if (program.metrics) {
+    appBuilder.metrics(metrics);
   }
   appBuilder
     .static(path.join(__dirname, 'web', 'assets'))
@@ -266,10 +271,23 @@ if (program.daemonize) {
    * Send incoming data
    */
   tailer.on('line', (line) => {
+    metrics.countLine(line.s);
     filesSocket.emit('line', line);
   });
 
+  metrics.gauge(
+    'frontail_connected_clients',
+    'Browsers currently connected to the log socket.',
+    () => filesIo.sockets.size
+  );
+  metrics.gauge(
+    'frontail_sources',
+    'Number of log sources (files and containers).',
+    () => tailer.getSources().length
+  );
+
   tailer.on('error', (err) => {
+    metrics.countError();
     filesSocket.emit('line', `[frontail] ${  err.container  }: ${  err.message}`);
   });
 

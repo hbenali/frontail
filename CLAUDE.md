@@ -19,6 +19,7 @@ Run both `npm test` and `npm run lint` before committing; CI (`.github/workflows
 
 - `bin/frontail` -> `index.js`: wiring only. Parses options, builds the HTTP app, attaches socket.io, streams `tail` lines to clients.
 - `lib/options_parser.js`: commander. Exports `(argv) => options object` (plus `args`), a fresh `Command` per call. Also loads `--config` JSON (CLI flags win; unknown keys throw).
+- `lib/metrics.js`: tiny Prometheus text registry behind `--metrics` (`/metrics`, mounted after auth in `connect_builder.js`).
 - `lib/origin.js`: Origin check for socket.io handshakes (CSWSH guard); `--allowed-origin` extends it.
 - `lib/credentials.js`: Basic Auth credentials from flags > `--password-file` > `FRONTAIL_USER`/`FRONTAIL_PASSWORD`.
 - `lib/connect_builder.js`: connect middleware (health, security headers, auth, session, static, index, downloads).
