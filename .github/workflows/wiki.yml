@@ -1,0 +1,50 @@
+name: Publish wiki
+
+# docs/wiki/ is the source of truth for the GitHub wiki. Edits made in the
+# wiki UI are overwritten by the next sync.
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'docs/wiki/**'
+      - '.github/workflows/wiki.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: wiki
+  cancel-in-progress: true
+
+jobs:
+  publish:
+    name: Sync docs/wiki to the wiki
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Sync
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.sha }}
+        run: |
+          auth="AUTHORIZATION: basic $(printf 'x-access-token:%s' "$TOKEN" | base64 -w0)"
+          if ! git -c "http.extraheader=$auth" clone "https://github.com/${REPO}.wiki.git" wiki; then
+            echo "::error::Cannot clone the wiki. Enable the wiki in the repository settings and create its first page once in the web UI (GitHub only creates the wiki repository then)."
+            exit 1
+          fi
+
+          rsync -a --delete --exclude .git docs/wiki/ wiki/
+
+          cd wiki
+          if [ -z "$(git status --porcelain)" ]; then
+            echo "Wiki already up to date."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Sync from ${SHA}"
+          git -c "http.extraheader=$auth" push origin HEAD

@@ -1,0 +1,1 @@
+frontail is MIT licensed. Fork of [mthenw/frontail](https://github.com/mthenw/frontail) · [Sponsor @hbenali](https://github.com/sponsors/hbenali) · Docs live in [`docs/wiki`](https://github.com/hbenali/frontail/tree/master/docs/wiki).
