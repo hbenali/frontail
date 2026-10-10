@@ -12,7 +12,6 @@ const connectBuilder = require('./lib/connect_builder');
 const program = require('./lib/options_parser');
 const serverBuilder = require('./lib/server_builder');
 const daemonize = require('./lib/daemonize');
-const usageStats = require('./lib/stats');
 const pkg = require('./package.json');
 
 /**
@@ -23,13 +22,6 @@ if (program.args.length === 0 && program.container.length === 0) {
   console.error('Arguments needed, use --help');
   process.exit();
 }
-
-/**
- * Init usage statistics
- */
-const stats = usageStats(!program.disableUsageStats, program);
-stats.track('runtime', 'init');
-stats.time('runtime', 'runtime');
 
 /**
  * Validate params
@@ -241,15 +233,11 @@ if (program.daemonize) {
     filesSocket.emit('line', `[frontail] ${  err.container  }: ${  err.message}`);
   });
 
-  stats.track('runtime', 'started');
-
   /**
    * Handle signals
    */
   const cleanExit = () => {
-    stats.timeEnd('runtime', 'runtime', () => {
-      process.exit();
-    });
+    process.exit();
   };
   process.on('SIGINT', cleanExit);
   process.on('SIGTERM', cleanExit);

@@ -128,7 +128,7 @@ Options:
   --ui-no-colors                disable log colorizing (ANSI + format autodetection), on by default
   --ui-colors-preset <path>     extra log colorizing rules JSON (see ./preset/colors-example.json)
   --path <path>                 prefix path (default: /)
-  --disable-usage-stats         disable anonymous usage statistics
+  --disable-usage-stats         deprecated, no-op (usage statistics were removed)
   --help                        output usage information
 
 Author:  Houssem Ben Ali
