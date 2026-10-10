@@ -1,4 +1,6 @@
-# frontail — streaming logs to the browser
+<h1 align="center">
+  <img src="docs/banner.png" alt="frontail: stream your logs to the browser" width="100%">
+</h1>
 
 [![Build, Lint, Test, and Publish](https://github.com/hbenali/frontail/actions/workflows/push.yml/badge.svg)](https://github.com/hbenali/frontail/actions/workflows/push.yml)
 [![Sponsor](https://img.shields.io/badge/Sponsor-%E2%9D%A4-ea4aaa?logo=githubsponsors&logoColor=white)](https://github.com/sponsors/hbenali)

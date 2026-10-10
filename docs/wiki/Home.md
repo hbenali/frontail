@@ -1,3 +1,5 @@
+![frontail: stream your logs to the browser](https://raw.githubusercontent.com/hbenali/frontail/master/docs/banner.png)
+
 # frontail
 
 **frontail** streams log files to the browser, `tail -F` with a UI. Point it at files, stdin, Docker/Podman containers, the systemd journal or remote files over SSH, and watch lines appear in real time, colorized by log format.
