@@ -9,7 +9,7 @@ const fs = require('fs');
 const untildify = require('untildify');
 const tail = require('./lib/tail');
 const connectBuilder = require('./lib/connect_builder');
-const program = require('./lib/options_parser');
+const parseOptions = require('./lib/options_parser');
 const serverBuilder = require('./lib/server_builder');
 const daemonize = require('./lib/daemonize');
 const resolveCredentials = require('./lib/credentials');
@@ -18,7 +18,7 @@ const pkg = require('./package.json');
 /**
  * Parse args
  */
-program.parse(process.argv);
+const program = parseOptions(process.argv);
 if (program.args.length === 0 && program.container.length === 0) {
   console.error('Arguments needed, use --help');
   process.exit();

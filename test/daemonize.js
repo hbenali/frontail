@@ -7,7 +7,10 @@ const optionsParser = require('../lib/options_parser');
 const daemonize = require('../lib/daemonize');
 
 describe('daemonize', () => {
+  let opts;
+
   beforeEach(() => {
+    opts = optionsParser(['node', '/path/to/frontail']);
     sinon.stub(daemon, 'daemon');
     daemon.daemon.returns({
       pid: 1000,
@@ -24,53 +27,53 @@ describe('daemonize', () => {
 
   describe('should daemon', () => {
     it('current script', () => {
-      daemonize('script', optionsParser);
+      daemonize('script', opts);
 
       daemon.daemon.lastCall.args[0].should.match('script');
     });
 
     it('with hostname', () => {
-      optionsParser.parse(['node', '/path/to/frontail', '-h', '127.0.0.1']);
+      opts = optionsParser(['node', '/path/to/frontail', '-h', '127.0.0.1']);
 
-      daemonize('script', optionsParser);
+      daemonize('script', opts);
 
       daemon.daemon.lastCall.args[1].should.containDeep(['-h', '127.0.0.1']);
     });
 
     it('with port', () => {
-      optionsParser.parse(['node', '/path/to/frontail', '-p', '80']);
+      opts = optionsParser(['node', '/path/to/frontail', '-p', '80']);
 
-      daemonize('script', optionsParser);
+      daemonize('script', opts);
 
       daemon.daemon.lastCall.args[1].should.containDeep(['-p', 80]);
     });
 
     it('with lines number', () => {
-      optionsParser.parse(['node', '/path/to/frontail', '-n', '1']);
+      opts = optionsParser(['node', '/path/to/frontail', '-n', '1']);
 
-      daemonize('script', optionsParser);
+      daemonize('script', opts);
 
       daemon.daemon.lastCall.args[1].should.containDeep(['-n', 1]);
     });
 
     it('with lines stored in browser', () => {
-      optionsParser.parse(['node', '/path/to/frontail', '-l', '1']);
+      opts = optionsParser(['node', '/path/to/frontail', '-l', '1']);
 
-      daemonize('script', optionsParser);
+      daemonize('script', opts);
 
       daemon.daemon.lastCall.args[1].should.containDeep(['-l', 1]);
     });
 
     it('with theme', () => {
-      optionsParser.parse(['node', '/path/to/frontail', '-t', 'dark']);
+      opts = optionsParser(['node', '/path/to/frontail', '-t', 'dark']);
 
-      daemonize('script', optionsParser);
+      daemonize('script', opts);
 
       daemon.daemon.lastCall.args[1].should.containDeep(['-t', 'dark']);
     });
 
     it('with authorization, passing credentials via env not argv', () => {
-      optionsParser.parse([
+      opts = optionsParser([
         'node',
         '/path/to/frontail',
         '-U',
@@ -79,7 +82,7 @@ describe('daemonize', () => {
         'passw0rd',
       ]);
 
-      daemonize('script', optionsParser, {
+      daemonize('script', opts, {
         doAuthorization: true,
       });
 
@@ -91,7 +94,7 @@ describe('daemonize', () => {
     });
 
     it('with authorization from resolved credentials', () => {
-      daemonize('script', optionsParser, {
+      daemonize('script', opts, {
         doAuthorization: true,
         credentials: { user: 'bob', password: 'from-file' },
       });
@@ -102,7 +105,7 @@ describe('daemonize', () => {
     });
 
     it('without authorization if option doAuthorization not passed', () => {
-      optionsParser.parse([
+      opts = optionsParser([
         'node',
         '/path/to/frontail',
         '-U',
@@ -111,13 +114,13 @@ describe('daemonize', () => {
         'passw0rd',
       ]);
 
-      daemonize('script', optionsParser);
+      daemonize('script', opts);
 
       daemon.daemon.lastCall.args[2].should.not.have.property('env');
     });
 
     it('with secure connection', () => {
-      optionsParser.parse([
+      opts = optionsParser([
         'node',
         '/path/to/frontail',
         '-k',
@@ -126,7 +129,7 @@ describe('daemonize', () => {
         'cert.file',
       ]);
 
-      daemonize('script', optionsParser, {
+      daemonize('script', opts, {
         doSecure: true,
       });
 
@@ -139,7 +142,7 @@ describe('daemonize', () => {
     });
 
     it('without secure connection if option doSecure not passed', () => {
-      optionsParser.parse([
+      opts = optionsParser([
         'node',
         '/path/to/frontail',
         '-k',
@@ -148,7 +151,7 @@ describe('daemonize', () => {
         'cert.file',
       ]);
 
-      daemonize('script', optionsParser, {
+      daemonize('script', opts, {
         doSecure: true,
       });
 
@@ -161,9 +164,9 @@ describe('daemonize', () => {
     });
 
     it('with url-path option', () => {
-      optionsParser.parse(['node', '/path/to/frontail', '--url-path', '/test']);
+      opts = optionsParser(['node', '/path/to/frontail', '--url-path', '/test']);
 
-      daemonize('script', optionsParser);
+      daemonize('script', opts);
 
       daemon.daemon.lastCall.args[1].should.containDeep([
         '--url-path',
@@ -172,31 +175,31 @@ describe('daemonize', () => {
     });
 
     it('with hide-topbar option', () => {
-      optionsParser.parse(['node', '/path/to/frontail', '--ui-hide-topbar']);
+      opts = optionsParser(['node', '/path/to/frontail', '--ui-hide-topbar']);
 
-      daemonize('script', optionsParser);
+      daemonize('script', opts);
 
       daemon.daemon.lastCall.args[1].should.containDeep(['--ui-hide-topbar']);
     });
 
     it('with no-indent option', () => {
-      optionsParser.parse(['node', '/path/to/frontail', '--ui-no-indent']);
+      opts = optionsParser(['node', '/path/to/frontail', '--ui-no-indent']);
 
-      daemonize('script', optionsParser);
+      daemonize('script', opts);
 
       daemon.daemon.lastCall.args[1].should.containDeep(['--ui-no-indent']);
     });
 
     it('with highlight option', () => {
-      optionsParser.parse(['node', '/path/to/frontail', '--ui-highlight']);
+      opts = optionsParser(['node', '/path/to/frontail', '--ui-highlight']);
 
-      daemonize('script', optionsParser);
+      daemonize('script', opts);
 
       daemon.daemon.lastCall.args[1].should.containDeep(['--ui-highlight']);
     });
 
     it('with highlight preset option', () => {
-      optionsParser.parse([
+      opts = optionsParser([
         'node',
         '/path/to/frontail',
         '--ui-highlight',
@@ -204,7 +207,7 @@ describe('daemonize', () => {
         'test.json',
       ]);
 
-      daemonize('script', optionsParser);
+      daemonize('script', opts);
 
       daemon.daemon.lastCall.args[1].should.containDeep([
         '--ui-highlight-preset',
@@ -213,30 +216,30 @@ describe('daemonize', () => {
     });
 
     it('with file to tail', () => {
-      optionsParser.parse(['node', '/path/to/frontail', '/path/to/file']);
+      opts = optionsParser(['node', '/path/to/frontail', '/path/to/file']);
 
-      daemonize('script', optionsParser);
+      daemonize('script', opts);
 
       daemon.daemon.lastCall.args[1].should.containDeep(['/path/to/file']);
     });
   });
 
   it('should write pid to pidfile', () => {
-    optionsParser.parse([
+    opts = optionsParser([
       'node',
       '/path/to/frontail',
       '--pid-path',
       '/path/to/pid',
     ]);
 
-    daemonize('script', optionsParser);
+    daemonize('script', opts);
 
     fs.writeFileSync.lastCall.args[0].should.be.equal('/path/to/pid');
     fs.writeFileSync.lastCall.args[1].should.be.equal(1000);
   });
 
   it('should log to file', () => {
-    optionsParser.parse([
+    opts = optionsParser([
       'node',
       '/path/to/frontail',
       '--log-path',
@@ -244,7 +247,7 @@ describe('daemonize', () => {
     ]);
     fs.openSync.returns('file');
 
-    daemonize('script', optionsParser);
+    daemonize('script', opts);
 
     fs.openSync.lastCall.args[0].should.equal('/path/to/log');
     fs.openSync.lastCall.args[1].should.equal('a');

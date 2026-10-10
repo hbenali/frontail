@@ -19,7 +19,7 @@
     "byline": "5.0.0",
     "CBuffer": "0.1.4",
     "command-exists": "1.2.8",
-    "commander": "3.0.1",
+    "commander": "^14.0.3",
     "connect": "3.7.0",
     "cookie": "0.7.2",
     "cookie-parser": "1.4.5",
