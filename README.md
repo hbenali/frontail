@@ -15,7 +15,7 @@
 
 **[👉 Try the live demo](https://frontail.hbenali.ovh/)** — fake logs streaming continuously across every format frontail auto-colorizes (apache2/nginx, Tomcat, Log4j/Logback, syslog, JSON lines, ANSI-colored sources).
 
-![frontail streaming colorized logs from several sources](docs/screenshots/overview.png)
+![frontail in action: streaming several sources, isolating one, filtering and hiding levels](docs/demo.gif)
 
 ---
 
