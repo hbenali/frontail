@@ -13,6 +13,7 @@ const parseOptions = require('./lib/options_parser');
 const serverBuilder = require('./lib/server_builder');
 const daemonize = require('./lib/daemonize');
 const resolveCredentials = require('./lib/credentials');
+const isOriginAllowed = require('./lib/origin');
 const pkg = require('./package.json');
 
 /**
@@ -77,7 +78,19 @@ if (program.daemonize) {
   /**
    * socket.io setup
    */
-  const io = new Server({ path: `${urlPath}/socket.io` });
+  const io = new Server({
+    path: `${urlPath}/socket.io`,
+    allowRequest: (req, callback) => {
+      callback(
+        null,
+        isOriginAllowed(
+          req.headers.origin,
+          req.headers.host,
+          program.allowedOrigin
+        )
+      );
+    },
+  });
   io.attach(server);
 
   // socket.io middleware registered on `io` only guards the main "/"

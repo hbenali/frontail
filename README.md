@@ -129,6 +129,7 @@ Options:
   --ui-no-colors                disable log colorizing (ANSI + format autodetection), on by default
   --ui-colors-preset <path>     extra log colorizing rules JSON (see ./preset/colors-example.json)
   --path <path>                 prefix path (default: /)
+  --allowed-origin <origin>     extra browser origin allowed to open the socket (repeatable); same-host origins always are
   --config <path>               JSON config file (option names + optional "files" array); CLI flags win
   --disable-usage-stats         deprecated, no-op (usage statistics were removed)
   --help                        output usage information
@@ -160,6 +161,7 @@ command line override the file.
 - Prefer `--password-file` or the `FRONTAIL_USER` / `FRONTAIL_PASSWORD` environment variables over `-P`: command-line arguments are visible to every local user via `ps`.
 - Basic Auth sends credentials in clear text. Serve over HTTPS (`-k` / `-c`) or put frontail behind a TLS-terminating reverse proxy.
 - Bind to `127.0.0.1` (`-h 127.0.0.1`) when a reverse proxy is in front.
+- Browsers can only open the log socket from the page's own host (cross-site WebSocket hijacking guard). Behind a reverse proxy that rewrites the `Host` header, allow the public address with `--allowed-origin https://logs.example.com`.
 - Responses carry `X-Content-Type-Options`, `X-Frame-Options` and `Referrer-Policy` headers.
 
 Web interface: **http://[host]:[port]**

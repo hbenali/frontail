@@ -223,6 +223,26 @@ describe('daemonize', () => {
       ]);
     });
 
+    it('with allowed origins', () => {
+      opts = optionsParser([
+        'node',
+        '/path/to/frontail',
+        '--allowed-origin',
+        'https://a.example.com',
+        '--allowed-origin',
+        'https://b.example.com',
+      ]);
+
+      daemonize('script', opts);
+
+      daemon.daemon.lastCall.args[1].should.containDeep([
+        '--allowed-origin',
+        'https://a.example.com',
+        '--allowed-origin',
+        'https://b.example.com',
+      ]);
+    });
+
     it('with containers and engine', () => {
       opts = optionsParser([
         'node',

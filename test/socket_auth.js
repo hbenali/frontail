@@ -43,12 +43,15 @@ describe('socket.io authorization', function socketAuth() {
     });
   }
 
-  function connect(cookie) {
+  function connect(cookie, origin) {
     return new Promise((resolve) => {
       const socket = io(`${base}/${namespace}`, {
         transports: ['polling'],
         reconnection: false,
-        extraHeaders: cookie ? { cookie } : {},
+        extraHeaders: {
+          ...(cookie ? { cookie } : {}),
+          ...(origin ? { origin } : {}),
+        },
       });
       socket.on('connect', () => {
         socket.close();
@@ -82,6 +85,16 @@ describe('socket.io authorization', function socketAuth() {
 
   it('accepts a connection with a valid session cookie', async () => {
     (await connect(sessionCookie)).should.equal('connected');
+  });
+
+  it('accepts a same-origin browser connection', async () => {
+    (await connect(sessionCookie, base)).should.equal('connected');
+  });
+
+  it('rejects a cross-site browser connection even with a valid cookie', async () => {
+    (await connect(sessionCookie, 'https://evil.example')).should.not.equal(
+      'connected'
+    );
   });
 
   it('rejects a connection without a cookie', async () => {
