@@ -31,7 +31,8 @@ Run `npm test`, `npm run lint` and `npm run typecheck` before committing; CI (`.
 - `lib/sources.js`: pure builders for command-backed sources (`--journal`, `--journal-unit`, `--ssh`): `{ name, type, follow, read }`, with input validation (option/shell-injection safe). `index.js` resolves/validates them up front.
 - `lib/tail.js`: spawns `tail -F` / container log commands, keeps a line buffer. `lib/daemonize.js`: `-d` mode.
 - `lib/untildify.js`, `lib/command_exists.js`: tiny in-repo replacements for ESM-only/abandoned packages.
-- `web/assets/app.js`: the whole browser UI (one file, ES5-style `var`, no build step). `web/index.html` is a template with `__TITLE__`/`__THEME__`/... placeholders.
+- `web/assets/app.js`: the browser UI wiring (DOM, events, socket). No build step: plain scripts loaded in order from `web/index.html` (`util`, `settings`, `formats`, `filters`, `highlight`, `app`, `init`), so every new browser file needs a line there, in the jsdom loader in `test/app.js`, and is covered by the `web/assets/*.js` glob in `eslint.config.js`.
+- Browser modules are **DOM-free UMD files** (`window.FrontailX` in the browser, `require()` in Node) with tests in `test/formats.js` and `test/ui_modules.js`: `util.js` (helpers), `settings.js` (localStorage, injectable store), `formats.js` (log-format detection/colorizing), `filters.js` (text/source/level visibility, memoized regex), `highlight.js` (keyword and preset highlighting). Put new pure logic there, not in `app.js`.
 - `preset/`: highlight and colorizing presets. `demo/`: public-demo log generator.
 
 ## Conventions and gotchas

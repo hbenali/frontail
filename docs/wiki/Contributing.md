@@ -20,7 +20,7 @@ Requires Node 22.12+. Run `npm test`, `npm run lint` and `npm run typecheck` bef
 - `lib/connect_builder.js`: middleware (health, security headers, auth, metrics, static, index); `lib/downloads.js`: the download endpoints; `lib/session_auth.js`: socket authentication.
 - `lib/tail.js` + `lib/sources.js`: spawn `tail -F`, container engines, `journalctl` and `ssh`, and keep the line buffer.
 - `lib/origin.js`, `lib/metrics.js`, `lib/daemonize.js`: Origin check, Prometheus registry, daemon mode.
-- `web/assets/app.js`: the browser UI (one file, no build step). `web/assets/formats.js`: log-format detection and colorizing, a pure module that also runs in Node tests.
+- `web/assets/app.js`: the browser UI wiring (DOM, events, socket), with no build step. The pure logic lives in small DOM-free modules next to it that also run in Node tests: `formats.js` (log-format detection and colorizing), `filters.js` (what is visible), `highlight.js`, `settings.js` (localStorage) and `util.js`.
 
 More detail and the gotchas that bit us (socket.io middleware is per namespace, rules receive HTML-escaped text, child stderr arrives in arbitrary chunks) are in [`CLAUDE.md`](https://github.com/hbenali/frontail/blob/master/CLAUDE.md).
 

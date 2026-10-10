@@ -1,4 +1,4 @@
-/* global Tinycon:false, ansi_up:false, FrontailFormats:false */
+/* global Tinycon:false, ansi_up:false, FrontailFormats:false, FrontailUtil:false, FrontailSettings:false, FrontailFilters:false, FrontailHighlight:false */
 
 window.App = (function app(window, document) {
   'use strict';
@@ -43,23 +43,10 @@ window.App = (function app(window, document) {
   ];
   var _highlightAccentColors = ['#4f8ef7','#f77070','#6ad19e','#f7b955','#c084fc'];
 
-  // ── LocalStorage persistence ───────────────────────────────────
-  var STORAGE_KEY = 'frontail:settings';
-
-  function _loadSettings() {
-    try {
-      var raw = localStorage.getItem(STORAGE_KEY);
-      return raw ? JSON.parse(raw) : {};
-    } catch { return {}; }
-  }
-
-  function _saveSettings(patch) {
-    try {
-      var current = _loadSettings();
-      var merged  = { ...current, ...patch};
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
-    } catch { /* localStorage unavailable (private browsing, quota, etc.) */ }
-  }
+  // ── LocalStorage persistence (settings.js) ─────────────────────
+  var _settings = FrontailSettings.create(function() { return window.localStorage; });
+  var _loadSettings = _settings.load;
+  var _saveSettings = _settings.save;
 
   // DOM refs
   var _elTotalLines, _elVisibleLines, _elErrorCount, _elWarnCount;
@@ -88,26 +75,11 @@ window.App = (function app(window, document) {
 
   // ── Utilities ─────────────────────────────────────────────────
 
-  function _debounce(fn, ms) {
-    var t;
-    return function() { clearTimeout(t); t = setTimeout(fn, ms); };
-  }
-
-  function _escapeRegExp(str) {
-    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  }
-
-  function _escapeHtml(str) {
-    return str
-      .replace(/&/g, '&amp;').replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-  }
-
-  function _basename(p) {
-    if (!p) return p;
-    var parts = String(p).split('/');
-    return parts[parts.length - 1] || p;
-  }
+  // Pure helpers live in util.js
+  var _debounce = FrontailUtil.debounce;
+  var _escapeRegExp = FrontailUtil.escapeRegExp;
+  var _escapeHtml = FrontailUtil.escapeHtml;
+  var _basename = FrontailUtil.basename;
 
   var FILE_ICON_SVG = '<svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M2.5 1h4.5l2.5 2.5V10a1 1 0 01-1 1h-6a1 1 0 01-1-1V2a1 1 0 011-1z" stroke="currentColor" stroke-width="1.1" stroke-linejoin="round"/><path d="M7 1v2.5h2.5" stroke="currentColor" stroke-width="1.1" stroke-linejoin="round"/></svg>';
   var CONTAINER_ICON_SVG = '<svg width="11" height="11" viewBox="0 0 12 12" fill="none"><rect x="1.5" y="0.5" width="9" height="7" rx="1.5" stroke="currentColor" stroke-width="1.1"/><rect x="3.5" y="2" width="5" height="4" rx="0.8" stroke="currentColor" stroke-width="0.8"/><circle cx="6" cy="9.5" r="1.2" stroke="currentColor" stroke-width="0.9"/></svg>';
@@ -141,13 +113,7 @@ window.App = (function app(window, document) {
     if (_elUpdateBanner) _elUpdateBanner.classList.remove('hidden');
   }
 
-  // ── Byte formatter ────────────────────────────────────────────
-  function _formatBytes(bytes) {
-    if (bytes < 1024)        return bytes + ' B';
-    if (bytes < 1048576)     return (bytes / 1024).toFixed(1) + ' KB';
-    if (bytes < 1073741824)  return (bytes / 1048576).toFixed(1) + ' MB';
-    return (bytes / 1073741824).toFixed(2) + ' GB';
-  }
+  var _formatBytes = FrontailUtil.formatBytes;
 
   // ── Stats ──────────────────────────────────────────────────────
 
@@ -185,34 +151,20 @@ window.App = (function app(window, document) {
 
   // ── Filter ─────────────────────────────────────────────────────
 
-  function _buildFilterRegex() {
-    if (!_filterValue) return null;
-    try {
-      var pattern = _regexMode ? _filterValue : _escapeRegExp(_filterValue);
-      return new RegExp(pattern, _caseSensitive ? '' : 'i');
-    } catch { return null; }
-  }
-
-  function _lineMatchesFilter(text) {
-    if (!_filterValue) return true;
-    var rx = _buildFilterRegex();
-    if (!rx) return true;
-    return _invertFilter ? !rx.test(text) : rx.test(text);
-  }
-
-  function _sourceMatchesFilter(source) {
-    if (!_selectedSource) return true;
-    return source === _selectedSource;
-  }
-
-  function _lineMatchesLevelFilter(text) {
-    var level = _detectLevel(text);
-    if (!level) return true; // unclassified lines are never hidden by level chips
-    return !!_levelFilters[level];
+  // The logic lives in filters.js; this snapshots the current UI state.
+  function _filterState() {
+    return {
+      filterValue: _filterValue,
+      regexMode: _regexMode,
+      caseSensitive: _caseSensitive,
+      invertFilter: _invertFilter,
+      selectedSource: _selectedSource,
+      levelFilters: _levelFilters
+    };
   }
 
   function _lineIsVisible(text, source) {
-    return _lineMatchesFilter(text) && _sourceMatchesFilter(source) && _lineMatchesLevelFilter(text);
+    return FrontailFilters.isVisible(text, source, _filterState());
   }
 
   function _filterElement(el) {
@@ -382,51 +334,23 @@ window.App = (function app(window, document) {
 
   // ── Highlight: server ─────────────────────────────────────────
 
+  // The highlighting logic lives in highlight.js and filters.js.
   function _applyServerHighlightWord(line) {
-    var out = line;
-    if (_highlightConfig && _highlightConfig.words) {
-      Object.keys(_highlightConfig.words).forEach(function(w) {
-        out = out.replace(
-          new RegExp('(?![^<]*>)(' + _escapeRegExp(w) + ')', 'g'),
-          '<span style="' + _highlightConfig.words[w] + '">$1</span>'
-        );
-      });
-    }
-    return out;
+    return FrontailHighlight.applyServerWords(line, _highlightConfig);
   }
 
   function _applyServerHighlightLine(text, container) {
-    if (_highlightConfig && _highlightConfig.lines) {
-      Object.keys(_highlightConfig.lines).forEach(function(check) {
-        if (text.indexOf(check) !== -1) {
-          container.setAttribute('style', _highlightConfig.lines[check]);
-        }
-      });
-    }
-    return container;
+    return FrontailHighlight.applyServerLine(text, container, _highlightConfig);
   }
 
   // ── Highlight: user keywords ───────────────────────────────────
 
   function _applyUserHighlights(html) {
-    _userHighlights.forEach(function(h, idx) {
-      var cls = _highlightCssClasses[idx % _highlightCssClasses.length];
-      html = html.replace(
-        new RegExp('(?![^<]*>)(' + _escapeRegExp(h.word) + ')', 'gi'),
-        '<span class="' + cls + '">$1</span>'
-      );
-    });
-    return html;
+    return FrontailHighlight.applyKeywords(html, _userHighlights, _highlightCssClasses);
   }
 
   function _applyFilterHighlight(html) {
-    if (!_filterValue) return html;
-    var rx = _buildFilterRegex();
-    if (!rx) return html;
-    return html.replace(
-      new RegExp('(?![^<]*>)(' + rx.source + ')', _caseSensitive ? 'g' : 'gi'),
-      '<mark class="search-highlight">$1</mark>'
-    );
+    return FrontailFilters.highlightMatches(html, _filterState());
   }
 
   // ── ANSI indicator ──────────────────────────────────────────────
