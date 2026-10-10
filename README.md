@@ -2,6 +2,9 @@
 
 [![Build, Lint, Test, and Publish](https://github.com/hbenali/frontail/actions/workflows/push.yml/badge.svg)](https://github.com/hbenali/frontail/actions/workflows/push.yml)
 [![Sponsor](https://img.shields.io/badge/Sponsor-%E2%9D%A4-ea4aaa?logo=githubsponsors&logoColor=white)](https://github.com/sponsors/hbenali)
+[![CodeQL](https://github.com/hbenali/frontail/actions/workflows/codeql.yml/badge.svg)](https://github.com/hbenali/frontail/actions/workflows/codeql.yml)
+[![Trivy](https://github.com/hbenali/frontail/actions/workflows/trivy.yml/badge.svg)](https://github.com/hbenali/frontail/actions/workflows/trivy.yml)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/hbenali/frontail/badge)](https://scorecard.dev/viewer/?uri=github.com/hbenali/frontail)
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-frontail.hbenali.ovh-4f8ef7)](https://frontail.hbenali.ovh/)
 
 > **This repository is a fork of [mthenw/frontail](https://github.com/mthenw/frontail) by [@hbenali](https://github.com/hbenali), extended with a modernised UI, richer features, and an updated Docker base image.**

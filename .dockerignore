@@ -1,0 +1,14 @@
+# The Dockerfile copies only what it needs; keep the build context small.
+node_modules
+.git
+.github
+.claude
+docs
+test
+dist
+*.md
+!README.md
+.dockerignore
+.editorconfig
+.gitattributes
+.nvmrc

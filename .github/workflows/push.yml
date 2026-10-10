@@ -120,8 +120,13 @@ jobs:
             mv "$f" "frontail-${{ github.ref_name }}-${base}"
           done
           ls -la
-      - name: Create GitHub Release
+      # Published releases are immutable (assets can't be added afterwards),
+      # so the release is created as a DRAFT with the binaries attached. A
+      # maintainer then edits the notes and publishes it:
+      #   gh release edit <tag> --notes-file notes.md --draft=false
+      - name: Create draft GitHub Release
         uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
         with:
+          draft: true
           files: dist/*
           generate_release_notes: true

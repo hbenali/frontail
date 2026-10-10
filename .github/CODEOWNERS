@@ -1,0 +1,13 @@
+# Default owner: requested for review on every pull request.
+*                              @hbenali
+
+# Security-sensitive code and configuration
+/lib/session_auth.js           @hbenali
+/lib/connect_builder.js        @hbenali
+/lib/origin.js                 @hbenali
+/lib/credentials.js            @hbenali
+/lib/sources.js                @hbenali
+/index.js                      @hbenali
+/Dockerfile*                   @hbenali
+/.github/                      @hbenali
+/SECURITY.md                   @hbenali
