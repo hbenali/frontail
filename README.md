@@ -78,7 +78,7 @@ docker run -d -p 9001:9001 -v /var/log:/log hbenali/frontail /log/syslog
 - Tailing multiple files and stdin
 - Basic authentication (`-U` / `-P`, or `--password-file` / `FRONTAIL_USER` + `FRONTAIL_PASSWORD` to keep the password out of `ps`)
 - HTTPS (`-k` / `-c`)
-- Running behind a path prefix (`--url-path`, `--path`)
+- Running behind a path prefix (`--url-path`)
 - Customisable log highlighting presets
 
 ---
@@ -128,7 +128,6 @@ Options:
   --ui-highlight-preset <path>  custom highlight preset JSON
   --ui-no-colors                disable log colorizing (ANSI + format autodetection), on by default
   --ui-colors-preset <path>     extra log colorizing rules JSON (see ./preset/colors-example.json)
-  --path <path>                 prefix path (default: /)
   --journal                     follow the systemd journal (journalctl)
   --journal-unit <unit>         follow only this systemd unit (repeatable, implies --journal)
   --ssh <target>                follow a remote file over ssh: [user@]host:/absolute/path (repeatable)
@@ -471,7 +470,7 @@ The image uses a **multi-stage build** (Node 24 LTS on Alpine), includes `docker
 ### Health check
 
 The image ships a built-in `HEALTHCHECK` that curls a fixed `/healthz` endpoint on port 9001 — it
-always returns `200 OK` regardless of `--url-path`/`--path` and never requires Basic Auth credentials,
+always returns `200 OK` regardless of `--url-path` and never requires Basic Auth credentials,
 so it works out of the box with `docker ps`, Compose, Swarm, and Kubernetes probes alike. If you're
 writing your own healthcheck (e.g. in a `docker-compose.yml` that predates this), use:
 
