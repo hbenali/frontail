@@ -38,6 +38,8 @@ describe('connectBuilder', () => {
       .expect('x-content-type-options', 'nosniff')
       .expect('x-frame-options', 'SAMEORIGIN')
       .expect('referrer-policy', 'no-referrer')
+      .expect('content-security-policy', /script-src 'self'(;|$)/)
+      .expect('content-security-policy', /frame-ancestors 'self'/)
       .expect(200, done);
   });
 

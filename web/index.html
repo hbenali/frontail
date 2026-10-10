@@ -276,21 +276,7 @@
   <script src="__PATH__/tinycon.min.js"></script>
   <script src="__PATH__/ansi_up.js"></script>
   <script src="__PATH__/app.js"></script>
-  <script>
-    window._frontailPath = '__PATH__';
-    window._frontailVersion = '__VERSION__';
-    var socket = new io.connect('/__NAMESPACE__', {
-      path: '__PATH__/socket.io',
-      transports: ['websocket']
-    });
-    window.load = App.init({
-      socket: socket,
-      container: document.getElementById('logContainer'),
-      filterInput: document.getElementById('filterInput'),
-      pauseBtn: document.getElementById('pauseBtn'),
-      topbar: document.getElementById('topbar'),
-      body: document.body
-    });
-  </script>
+  <!-- Bootstrap lives in init.js (not inline) so the Content-Security-Policy can forbid inline scripts. -->
+  <script src="__PATH__/init.js" data-path="__PATH__" data-version="__VERSION__" data-namespace="__NAMESPACE__"></script>
 </body>
 </html>

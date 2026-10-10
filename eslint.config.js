@@ -33,7 +33,7 @@ module.exports = [
     languageOptions: { globals: { ...globals.mocha } },
   },
   {
-    files: ['web/assets/app.js'],
+    files: ['web/assets/app.js', 'web/assets/init.js'],
     languageOptions: {
       sourceType: 'script',
       globals: { ...globals.browser, io: 'readonly' },
