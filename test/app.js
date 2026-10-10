@@ -239,4 +239,68 @@ describe('browser application', () => {
     log.childNodes.length.should.be.equal(1);
     log.lastChild.querySelector('.line-content p').textContent.should.be.equal('line2');
   });
+
+  describe('log format colorizing', () => {
+    const cases = [
+      ['apache access log (HTTP/2)',
+        '1.2.3.4 - - [01/Jan/2024:12:00:00 +0000] "GET /a HTTP/2.0" 200 12',
+        ['log-fc-method">GET', 'log-fc-status-2xx">200', 'log-fc-proto">HTTP/2.0']],
+      ['Spring Boot',
+        '2024-01-01 12:00:00.123  INFO 1234 --- [           main] c.e.Application  : Started',
+        ['log-fc-level-info">INFO', 'log-fc-pid">1234', 'log-fc-logger">c.e.Application']],
+      ['Logback [thread] LEVEL logger',
+        '12:00:00.123 [main] ERROR c.e.App - boom',
+        ['log-fc-thread">main', 'log-fc-level-error">ERROR', 'log-fc-logger">c.e.App']],
+      ['Python dash style',
+        '2024-01-01 12:00:00,123 - mylog - WARNING - careful',
+        ['log-fc-logger">mylog', 'log-fc-level-warn">WARNING']],
+      ['Python default',
+        'ERROR:root:boom',
+        ['log-fc-level-error">ERROR', 'log-fc-logger">root']],
+      ['PostgreSQL',
+        '2024-01-01 12:00:00.123 UTC [1234] ERROR:  relation missing',
+        ['log-fc-pid">1234', 'log-fc-level-error">ERROR']],
+      ['MySQL',
+        '2024-01-01T12:00:00.123456Z 0 [Warning] [MY-010068] [Server] CA cert',
+        ['log-fc-level-warn">Warning', 'log-fc-meta">MY-010068', 'log-fc-logger">Server']],
+      ['klog',
+        'E0101 12:00:00.123456       1 main.go:12] failed',
+        ['log-fc-level-error">E', 'log-fc-logger">main.go:12']],
+      ['Redis',
+        '1234:M 01 Jan 2024 12:00:00.123 # Warning: no config',
+        ['log-fc-level-warn">#', 'log-fc-meta">M']],
+      ['Java stack frame',
+        '\tat com.example.Foo.bar(Foo.java:42)',
+        ['log-fc-logger">com.example.Foo.bar', 'log-fc-meta">Foo.java:42']],
+      ['Java Caused by',
+        'Caused by: java.io.IOException: nope',
+        ['log-fc-level-error">Caused by:', 'log-fc-logger">java.io.IOException']],
+      ['Python traceback frame',
+        '  File "/app/x.py", line 3, in main',
+        ['log-fc-path">/app/x.py', 'log-fc-method">main']],
+      ['logfmt',
+        'ts=2024-01-01T12:00:00Z level=error msg="db down" duration=3ms',
+        ['log-fc-jkey">level', 'log-fc-level-error">error', 'log-fc-time">2024-01-01T12:00:00Z']],
+      ['Go log package timestamp',
+        '2024/01/01 12:00:00 server started',
+        ['log-fc-time">2024/01/01 12:00:00']],
+    ];
+
+    cases.forEach(([name, line, expected]) => {
+      it(`colorizes ${name}`, () => {
+        io.emit('line', line);
+
+        const html = window.document.querySelector('.line-content p').innerHTML;
+        expected.forEach((fragment) => html.should.containEql(fragment));
+      });
+    });
+
+    it('does not mistake a plain sentence for logfmt', () => {
+      io.emit('line', 'this is a = b sentence');
+
+      window.document
+        .querySelector('.line-content p')
+        .innerHTML.should.not.containEql('log-fc-jkey');
+    });
+  });
 });

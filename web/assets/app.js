@@ -162,7 +162,10 @@ window.App = (function app(window, document) {
 
   function _detectLevel(text) {
     var t = text.toLowerCase();
-    if (/\b(error|err|fatal|critical|crit|exception|traceback)\b/.test(t)) return 'error';
+    // klog/glog: "E0101 12:00:00.123456 ..." — severity is the first letter
+    var klog = /^([iwef])\d{4} \d{2}:\d{2}:\d{2}\./.exec(t);
+    if (klog) return { i: 'info', w: 'warn', e: 'error', f: 'error' }[klog[1]];
+    if (/\b(error|err|fatal|critical|crit|exception|traceback|panic)\b/.test(t)) return 'error';
     if (/\b(warn|warning)\b/.test(t)) return 'warn';
     if (/\b(info|information)\b/.test(t)) return 'info';
     if (/\b(debug|trace|verbose)\b/.test(t)) return 'debug';
@@ -197,9 +200,9 @@ window.App = (function app(window, document) {
 
   function _fcLevelClass(word) {
     var w = (word || '').toLowerCase();
-    if (/^(emerg|alert|crit|severe|error|err|fatal)/.test(w)) return 'level-error';
+    if (/^(emerg|alert|crit|severe|error|err|fatal|panic)/.test(w)) return 'level-error';
     if (/^warn/.test(w)) return 'level-warn';
-    if (/^(notice|info)/.test(w)) return 'level-info';
+    if (/^(notice|info|log$)/.test(w)) return 'level-info';
     return 'level-debug';
   }
 
@@ -244,11 +247,11 @@ window.App = (function app(window, document) {
 
   var _FORMAT_RULES = [
     { // Apache/Nginx combined or common access log
-      regex: /^(\S+) (\S+) (\S+) \[([^\]]+)\] "([A-Z]+) (\S*) (HTTP\/\d\.\d)" (\d{3}) (\S+)/,
+      regex: /^(\S+) (\S+) (\S+) \[([^\]]+)\] &quot;([A-Z]+) (\S*) (HTTP\/[\d.]+)&quot; (\d{3}) (\S+)/,
       render(m) {
         return _fcSpan('ip', m[1]) + ' ' + m[2] + ' ' + m[3] + ' [' +
-          _fcSpan('time', m[4]) + '] "' + _fcSpan('method', m[5]) + ' ' +
-          _fcSpan('path', m[6]) + ' ' + _fcSpan('proto', m[7]) + '" ' +
+          _fcSpan('time', m[4]) + '] &quot;' + _fcSpan('method', m[5]) + ' ' +
+          _fcSpan('path', m[6]) + ' ' + _fcSpan('proto', m[7]) + '&quot; ' +
           _fcSpan(_fcStatusClass(m[8]), m[8]) + ' ' + _fcSpan('size', m[9]);
       }
     },
@@ -300,6 +303,106 @@ window.App = (function app(window, document) {
       render(m) {
         return _fcSpan('time', m[1]) + ' | ' + _fcSpan(_fcLevelClass(m[2]), m[2]) + ' | ';
       }
+    },
+    { // Spring Boot default: 2024-01-01 12:00:00.123  INFO 1234 --- [main] c.e.Application : msg
+      regex: /^(\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}:\d{2}[.,]\d{3}(?:Z|[+-]\d{2}:?\d{2})?)\s+([A-Z]{4,5})\s+(\d+) --- ((?:\[[^\]]*\]\s*)+?)(\S+)\s+:/,
+      render(m) {
+        return _fcSpan('time', m[1]) + ' ' + _fcSpan(_fcLevelClass(m[2]), m[2]) + ' ' +
+          _fcSpan('pid', m[3]) + ' --- ' + _fcSpan('thread', m[4].trim()) + ' ' +
+          _fcSpan('logger', m[5]) + ' :';
+      }
+    },
+    { // Logback/Log4j "[thread] LEVEL logger - msg": 12:00:00.123 [main] INFO  c.e.App - msg
+      regex: /^((?:\d{4}-\d{2}-\d{2} )?\d{2}:\d{2}:\d{2}[.,]\d{3}) \[([^\]]+)\]\s+(TRACE|DEBUG|INFO|WARN|ERROR|FATAL)\s+(\S+)\s+-\s/,
+      render(m) {
+        return _fcSpan('time', m[1]) + ' [' + _fcSpan('thread', m[2]) + '] ' +
+          _fcSpan(_fcLevelClass(m[3]), m[3]) + ' ' + _fcSpan('logger', m[4]) + ' - ';
+      }
+    },
+    { // Python logging, dash style: 2024-01-01 12:00:00,123 - name - INFO - msg
+      regex: /^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}[.,]\d{3})\s+-\s+(\S+)\s+-\s+(DEBUG|INFO|WARNING|WARN|ERROR|CRITICAL|FATAL)\s+-\s/,
+      render(m) {
+        return _fcSpan('time', m[1]) + ' - ' + _fcSpan('logger', m[2]) + ' - ' +
+          _fcSpan(_fcLevelClass(m[3]), m[3]) + ' - ';
+      }
+    },
+    { // Python logging default: INFO:name:message
+      regex: /^(DEBUG|INFO|WARNING|ERROR|CRITICAL):([\w.-]+):/,
+      render(m) {
+        return _fcSpan(_fcLevelClass(m[1]), m[1]) + ':' + _fcSpan('logger', m[2]) + ':';
+      }
+    },
+    { // PostgreSQL: 2024-01-01 12:00:00.123 UTC [1234] LOG:  message
+      regex: /^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}(?:\.\d+)? [A-Z]{2,5}) \[(\d+)\](?: ([\w@.-]+))? (DEBUG\d?|INFO|NOTICE|WARNING|ERROR|LOG|FATAL|PANIC|STATEMENT|DETAIL|HINT|CONTEXT):/,
+      render(m) {
+        return _fcSpan('time', m[1]) + ' [' + _fcSpan('pid', m[2]) + ']' +
+          (m[3] ? ' ' + _fcSpan('meta', m[3]) : '') + ' ' +
+          _fcSpan(_fcLevelClass(m[4]), m[4]) + ':';
+      }
+    },
+    { // MySQL 8 / MariaDB error log: 2024-01-01T12:00:00.123456Z 0 [Warning] [MY-010068] [Server] msg
+      regex: /^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})) (\d+) \[(\w+)\](?: \[([\w-]+)\])?(?: \[(\w+)\])?/,
+      render(m) {
+        return _fcSpan('time', m[1]) + ' ' + _fcSpan('thread', m[2]) + ' [' +
+          _fcSpan(_fcLevelClass(m[3]), m[3]) + ']' +
+          (m[4] ? ' [' + _fcSpan('meta', m[4]) + ']' : '') +
+          (m[5] ? ' [' + _fcSpan('logger', m[5]) + ']' : '');
+      }
+    },
+    { // Kubernetes klog / glog: I0101 12:00:00.123456       1 main.go:12] msg
+      regex: /^([IWEF])(\d{4} \d{2}:\d{2}:\d{2}\.\d+)\s+(\d+) ([\w.-]+:\d+)\]/,
+      render(m) {
+        var lvl = { I: 'info', W: 'warn', E: 'error', F: 'fatal' }[m[1]];
+        return _fcSpan(_fcLevelClass(lvl), m[1]) + _fcSpan('time', m[2]) + ' ' +
+          _fcSpan('pid', m[3]) + ' ' + _fcSpan('logger', m[4]) + ']';
+      }
+    },
+    { // Redis: 1234:M 01 Jan 2024 12:00:00.123 * message
+      regex: /^(\d+):([XCSM]) (\d{1,2} \w{3} \d{4} \d{2}:\d{2}:\d{2}\.\d{3}) ([.\-*#]) /,
+      render(m) {
+        var lvl = { '.': 'debug', '-': 'info', '*': 'notice', '#': 'warning' }[m[4]];
+        return _fcSpan('pid', m[1]) + ':' + _fcSpan('meta', m[2]) + ' ' +
+          _fcSpan('time', m[3]) + ' ' + _fcSpan(_fcLevelClass(lvl), m[4]) + ' ';
+      }
+    },
+    { // Java stack trace frame: "    at com.example.Foo.bar(Foo.java:42)"
+      regex: /^(\s+)at ([\w$.<>/-]+)(?:\(([^)]*)\))?/,
+      render(m) {
+        return m[1] + 'at ' + _fcSpan('logger', m[2]) +
+          (m[3] !== undefined ? '(' + _fcSpan('meta', m[3]) + ')' : '');
+      }
+    },
+    { // Java "Caused by: java.io.IOException: msg" / "Suppressed: ..."
+      regex: /^(\s*)(Caused by|Suppressed):\s*([\w$.]+)/,
+      render(m) {
+        return m[1] + _fcSpan('level-error', m[2] + ':') + ' ' + _fcSpan('logger', m[3]);
+      }
+    },
+    { // Java "Exception in thread "main" java.lang.NullPointerException"
+      regex: /^Exception in thread &quot;([^&]*)&quot; ([\w$.]+)/,
+      render(m) {
+        return _fcSpan('level-error', 'Exception in thread') + ' &quot;' +
+          _fcSpan('thread', m[1]) + '&quot; ' + _fcSpan('logger', m[2]);
+      }
+    },
+    { // Python traceback header / frame
+      regex: /^Traceback \(most recent call last\):/,
+      render(m) { return _fcSpan('level-error', m[0]); }
+    },
+    {
+      regex: /^(\s+)File &quot;([^&]*)&quot;, line (\d+)(?:, in (\S+))?/,
+      render(m) {
+        return m[1] + 'File &quot;' + _fcSpan('path', m[2]) + '&quot;, line ' +
+          _fcSpan('size', m[3]) + (m[4] ? ', in ' + _fcSpan('method', m[4]) : '');
+      }
+    },
+    { // logfmt: ts=... level=info msg="started" duration=3ms (whole line of key=value pairs)
+      regex: /^[A-Za-z_][\w.-]*=(?:&quot;.*?&quot;|\S*)(?: +[A-Za-z_][\w.-]*=(?:&quot;.*?&quot;|\S*))+\s*$/,
+      render(m) {
+        return m[0].replace(/([A-Za-z_][\w.-]*)=(&quot;.*?&quot;|\S*)/g, function(whole, key, val) {
+          return _fcSpan('jkey', key) + '=' + _jsonFieldSpan(key, val);
+        });
+      }
     }
   ];
 
@@ -344,7 +447,7 @@ window.App = (function app(window, document) {
   // above — timestamps, log levels, IPs, bracketed metadata, quoted strings.
 
   var GENERIC_FC_RX = new RegExp(
-    '(\\d{4}-\\d{2}-\\d{2}[ T]\\d{2}:\\d{2}:\\d{2}(?:[.,]\\d+)?(?:Z|[+-]\\d{2}:?\\d{2})?)' +
+    '(\\d{4}[-/]\\d{2}[-/]\\d{2}[ T]\\d{2}:\\d{2}:\\d{2}(?:[.,]\\d+)?(?:Z|[+-]\\d{2}:?\\d{2})?)' +
     '|((?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\\s+\\d{1,2}\\s+\\d{2}:\\d{2}:\\d{2})' +
     '|(\\b(?:TRACE|DEBUG|INFO|NOTICE|WARNING|WARN|ERROR|ERR|SEVERE|FATAL|CRITICAL|CRIT|EMERGENCY|EMERG|ALERT)\\b)' +
     '|(\\b(?:\\d{1,3}\\.){3}\\d{1,3}\\b)' +

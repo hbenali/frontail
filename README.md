@@ -293,6 +293,12 @@ Two things happen per line, depending on whether it already carries ANSI escape 
   - Tomcat/Catalina (`juli` one-line format and the classic two-line format)
   - Log4j/Logback pipe-delimited (`2024-01-01 12:00:00,000 | INFO | message [logger<thread>]`)
   - Generic syslog
+  - Spring Boot default console format, and Logback/Log4j `HH:mm:ss.SSS [thread] LEVEL logger - msg`
+  - Python `logging` (`INFO:name:msg` and `asctime - name - LEVEL - msg`)
+  - PostgreSQL server log, MySQL 8 / MariaDB error log
+  - Kubernetes `klog`/`glog` (`E0101 12:00:00.123456 1 main.go:12] msg`) and Redis
+  - Java stack traces (`at …`, `Caused by:`, `Exception in thread`) and Python tracebacks
+  - logfmt (`ts=… level=error msg="…"`)
 
   If none of those match, a **generic fallback** still colours whatever it recognises anywhere in the line: timestamps, log-level words, IPv4 addresses, `[bracketed]` metadata, and `"quoted strings"`. So even a completely custom log format gets *some* coloring by default.
 
