@@ -64,6 +64,22 @@ describe('connectBuilder', () => {
       });
   });
 
+  it('should reject credentials that only differ by trailing NULs or length', (done) => {
+    const app = connectBuilder('/').authorize('user', 'pass').build();
+    const auth = (u, p) =>
+      `Basic ${Buffer.from(`${u}:${p}`).toString('base64')}`;
+
+    request(app)
+      .get('/')
+      .set('Authorization', auth('user', 'pass\u0000'))
+      .expect(401, () => {
+        request(app)
+          .get('/')
+          .set('Authorization', auth('user', 'pas'))
+          .expect(401, done);
+      });
+  });
+
   it('should build app allowing user to login', (done) => {
     const app = connectBuilder('/').authorize('user', 'pass').build();
     app.use((req, res) => {
