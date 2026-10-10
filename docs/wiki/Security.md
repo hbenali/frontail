@@ -11,7 +11,7 @@ frontail -U admin --password-file /run/secrets/frontail_password /var/log/syslog
 - **Don't use `-P` on shared machines**: command-line arguments are visible to every local user through `ps`. Use `--password-file`, or the `FRONTAIL_USER` / `FRONTAIL_PASSWORD` environment variables.
 - Daemon mode passes credentials to the background process through its environment, never through arguments.
 - Credentials are compared in constant time.
-- The log stream's WebSocket requires the authenticated session as well as the page.
+- The log stream's WebSocket is protected too: it only accepts a browser whose session actually passed Basic Auth (a signed session cookie that the server has marked authenticated). Visitors who fail Basic Auth never get a session.
 
 ## HTTPS
 
@@ -50,4 +50,4 @@ A browser can ask for a source's full history ("Start"). Each request replaces t
 
 ## Reporting a vulnerability
 
-Please don't open a public issue for a security problem. Email **contact@hbenali.ovh** with the details and a way to reproduce it, and you'll get a reply before anything is disclosed.
+Please don't open a public issue for a security problem. Use GitHub's **[Report a vulnerability](https://github.com/hbenali/frontail/security/advisories/new)** form (private), or email **contact@hbenali.ovh**. The full policy (supported versions, response times, scope, past fixes) is in [`SECURITY.md`](https://github.com/hbenali/frontail/blob/master/SECURITY.md).

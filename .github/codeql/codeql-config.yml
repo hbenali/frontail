@@ -1,0 +1,18 @@
+name: frontail CodeQL configuration
+
+# security-extended = the default security queries plus additional
+# lower-precision security queries (still no pure code-quality noise).
+queries:
+  - uses: security-extended
+
+paths-ignore:
+  # not our code
+  - node_modules
+  - web/assets/ansi_up.js
+  - web/assets/tinycon.min.js
+  # test inputs, sample content and docs
+  - test/fixtures
+  - test/compose
+  - test/k8s
+  - demo
+  - docs

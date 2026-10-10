@@ -1,0 +1,73 @@
+name: Bug report
+description: Something doesn't work as documented
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. Please check the [Troubleshooting page](https://github.com/hbenali/frontail/wiki/Troubleshooting) first: unreadable or missing files, no `/var/log/syslog`, and an empty view behind a reverse proxy are covered there.
+
+        **Security problem?** Don't file it here, see [SECURITY.md](https://github.com/hbenali/frontail/security/policy).
+  - type: input
+    id: version
+    attributes:
+      label: frontail version
+      description: Output of `frontail -V`, or the Docker image tag.
+      placeholder: "2.35.0"
+    validations:
+      required: true
+  - type: dropdown
+    id: install
+    attributes:
+      label: How do you run it?
+      options:
+        - npm (global install)
+        - Docker / Compose
+        - Kubernetes
+        - Standalone binary
+        - From source
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: platform
+    attributes:
+      label: OS and Node version
+      description: For example "Fedora 44, Node 22.12", or "Alpine (Docker image)".
+    validations:
+      required: true
+  - type: textarea
+    id: command
+    attributes:
+      label: Command line or config
+      description: The exact command, or the `--config` file. **Remove passwords and other secrets.**
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What you did, what you saw, and what you expected instead.
+    validations:
+      required: true
+  - type: textarea
+    id: output
+    attributes:
+      label: Server output and browser console
+      description: Anything frontail printed, any `[frontail] ...` lines in the log view, and browser console errors (F12). Sample log lines help for colorizing problems.
+      render: text
+  - type: textarea
+    id: extra
+    attributes:
+      label: Anything else
+      description: Reverse proxy in front? Browser? Screenshots?
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: I read the Troubleshooting page and searched existing issues.
+          required: true
+        - label: I removed passwords, tokens and private data from everything above.
+          required: true

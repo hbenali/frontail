@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Report a security vulnerability
+    url: https://github.com/hbenali/frontail/security/advisories/new
+    about: Please report vulnerabilities privately, not in a public issue. See SECURITY.md.
+  - name: Troubleshooting guide
+    url: https://github.com/hbenali/frontail/wiki/Troubleshooting
+    about: "No logs showing, no /var/log/syslog, empty view behind a proxy, SSH problems: check here first."
+  - name: Documentation (wiki)
+    url: https://github.com/hbenali/frontail/wiki
+    about: Options, log sources, formats, deployment and security.

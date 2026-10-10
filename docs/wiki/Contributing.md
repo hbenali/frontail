@@ -44,4 +44,4 @@ These wiki pages live in `docs/wiki/` and are published to the wiki automaticall
 
 ## Reporting issues and security problems
 
-[Open an issue](https://github.com/hbenali/frontail/issues/new) for bugs and ideas. For vulnerabilities see [Security](Security): please report them privately, not in a public issue.
+[Open an issue](https://github.com/hbenali/frontail/issues/new) for bugs and ideas. For vulnerabilities see [Security](Security) and [`SECURITY.md`](https://github.com/hbenali/frontail/blob/master/SECURITY.md): please report them privately, not in a public issue.

@@ -1,0 +1,40 @@
+name: Feature request
+description: Suggest an improvement or a new log format
+labels: [enhancement]
+body:
+  - type: dropdown
+    id: kind
+    attributes:
+      label: What kind of request is this?
+      options:
+        - New log format to colorize
+        - New log source
+        - Web UI
+        - Security / hardening
+        - Deployment (Docker, Kubernetes, packaging)
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem are you trying to solve?
+      description: The situation and what is hard or impossible today.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What would you like to happen?
+      description: Behaviour, option names, or a sketch of the UI, if you have an idea.
+  - type: textarea
+    id: samples
+    attributes:
+      label: Sample log lines (for new formats)
+      description: Three or more real lines, including a tricky one. **Remove private data.** Also say which program writes them.
+      render: text
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives and workarounds
+      description: What you do today, and whether a [custom format rule](https://github.com/hbenali/frontail/wiki/Custom-format-rules) or a config option nearly covers it.

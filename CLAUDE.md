@@ -44,6 +44,14 @@ Run `npm test`, `npm run lint` and `npm run typecheck` before committing; CI (`.
 - Style: single quotes, `prefer-const`, `eqeqeq`; optional `catch {}` when the error is unused; attach `{ cause }` when rethrowing.
 - Keep dependencies minimal; prefer a small in-repo helper over a new package.
 
+## Security checks and GitHub config
+
+- `.github/workflows/codeql.yml` + `.github/codeql/codeql-config.yml`: explicit CodeQL (javascript-typescript and the Actions workflows, `security-extended`, vendored files ignored). The repo's *default setup* is switched off, since advanced and default setup can't coexist.
+- `.github/workflows/trivy.yml` + `.trivyignore.yaml`: Trivy fs/image reporting; exceptions need a written reason.
+- `SECURITY.md`: policy and reporting (GitHub private vulnerability reporting is enabled). Issue/PR templates live in `.github/`.
+- Always check open Dependabot and code-scanning alerts before and after releases.
+- Socket auth: `lib/session_auth.js` requires a signed cookie AND `session.authenticated === true` in the shared store; `connect_builder.authorize()` sets that flag. Never use `cookieParser.signedCookie()` alone (it returns unsigned values unchanged).
+
 ## Releasing
 
 1. Bump `version` in `package.json` (`npm version X.Y.Z --no-git-tag-version`) and the image tags in `README.md`; commit `chore: bump version to X.Y.Z`; push to `master`.
