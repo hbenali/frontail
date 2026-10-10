@@ -397,9 +397,12 @@ window.App = (function app(window, document) {
       }
     },
     { // logfmt: ts=... level=info msg="started" duration=3ms (whole line of key=value pairs)
-      regex: /^[A-Za-z_][\w.-]*=(?:&quot;.*?&quot;|\S*)(?: +[A-Za-z_][\w.-]*=(?:&quot;.*?&quot;|\S*))+\s*$/,
+      // The two value alternatives are disjoint (quoted body can't contain
+      // &quot;, unquoted can't start with it), so this cannot backtrack
+      // exponentially on hostile log lines (CodeQL js/redos).
+      regex: /^[A-Za-z_][\w.-]*=(?:&quot;(?:(?!&quot;).)*&quot;|(?!&quot;)\S*)(?: +[A-Za-z_][\w.-]*=(?:&quot;(?:(?!&quot;).)*&quot;|(?!&quot;)\S*))+ *$/,
       render(m) {
-        return m[0].replace(/([A-Za-z_][\w.-]*)=(&quot;.*?&quot;|\S*)/g, function(whole, key, val) {
+        return m[0].replace(/([A-Za-z_][\w.-]*)=(&quot;(?:(?!&quot;).)*&quot;|(?!&quot;)\S*)/g, function(whole, key, val) {
           return _fcSpan('jkey', key) + '=' + _jsonFieldSpan(key, val);
         });
       }
