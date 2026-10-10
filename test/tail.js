@@ -21,9 +21,22 @@ function writeLines(fd, count) {
 describe('tail', () => {
   temp.track();
 
+  // Close every tailer a test creates so child processes and `process` exit
+  // listeners don't pile up across tests.
+  const opened = [];
+  const makeTail = (...args) => {
+    const t = tail(...args);
+    opened.push(t);
+    return t;
+  };
+
+  afterEach(() => {
+    opened.splice(0).forEach((t) => t.close());
+  });
+
   it('calls event line if new line appear in file', (done) => {
     temp.open(TEMP_FILE_PROFIX, (err, info) => {
-      tail(info.path).on('line', (line) => {
+      makeTail(info.path).on('line', (line) => {
         line.should.have.property('t', 'line0');
         line.should.have.property('s', info.path);
         done();
@@ -37,7 +50,7 @@ describe('tail', () => {
     temp.open(TEMP_FILE_PROFIX, (err, info) => {
       writeLines(info.fd, 20);
 
-      const tailer = tail(info.path, {
+      const tailer = makeTail(info.path, {
         buffer: 2,
       });
       setTimeout(() => {
@@ -54,11 +67,73 @@ describe('tail', () => {
     temp.open(TEMP_FILE_PROFIX, (err, info) => {
       writeLines(info.fd, 3);
 
-      const tailer = tail(info.path);
+      const tailer = makeTail(info.path);
       setTimeout(() => {
         tailer.getBuffer().should.be.empty;
         done();
       }, SPAWN_DELAY);
     });
+  });
+
+  it('removes its process exit listener on close', () => {
+    const before = process.listenerCount('exit');
+    const tailer = tail([]);
+
+    process.listenerCount('exit').should.equal(before + 1);
+    tailer.close();
+    process.listenerCount('exit').should.equal(before);
+  });
+
+  it('readFromStart streams the whole file then ends', (done) => {
+    temp.open(TEMP_FILE_PROFIX, (err, info) => {
+      writeLines(info.fd, 5);
+      const tailer = makeTail(info.path, { buffer: 0 });
+      const lines = [];
+
+      tailer.readFromStart(
+        0,
+        (line) => lines.push(line.t),
+        () => {
+          lines.should.eql(['line0', 'line1', 'line2', 'line3', 'line4']);
+          done();
+        }
+      );
+    });
+  });
+
+  it('readFromStart can be cancelled and then never calls back', (done) => {
+    temp.open(TEMP_FILE_PROFIX, (err, info) => {
+      writeLines(info.fd, 5000);
+      const tailer = makeTail(info.path, { buffer: 0 });
+      let calls = 0;
+
+      const cancel = tailer.readFromStart(
+        0,
+        () => {
+          calls += 1;
+        },
+        () => {
+          calls += 1000;
+        }
+      );
+      cancel();
+
+      setTimeout(() => {
+        calls.should.equal(0);
+        done();
+      }, 100);
+    });
+  });
+
+  it('readFromStart ends when the file is unreadable', (done) => {
+    const tailer = makeTail(['/definitely/not/here.log'], { buffer: 0 });
+
+    tailer.readFromStart(0, () => {}, done);
+  });
+
+  it('readFromStart returns a no-op cancel for an unknown source', () => {
+    const tailer = makeTail([], { buffer: 0 });
+
+    tailer.readFromStart(3, () => {}, () => {}).should.be.a.Function;
   });
 });

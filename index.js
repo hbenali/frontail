@@ -196,6 +196,25 @@ if (program.daemonize) {
     });
 
     // Client requests full file/container logs from beginning
+    // Reads started by this socket; cancelled on disconnect so a client that
+    // goes away mid-download doesn't leave a child process or file stream.
+    const activeReads = new Set();
+    const startRead = (fileIndex) => {
+      const cancel = tailer.readFromStart(
+        fileIndex,
+        (line) => socket.emit('line', line),
+        () => {
+          activeReads.delete(cancel);
+          socket.emit('read-end');
+        }
+      );
+      activeReads.add(cancel);
+    };
+    socket.on('disconnect', () => {
+      activeReads.forEach((cancel) => cancel());
+      activeReads.clear();
+    });
+
     socket.on('read-from-start', (data) => {
       const fileIndex = (data && data.fileIndex) || 0;
       const force     = !!(data && data.force);
@@ -205,10 +224,7 @@ if (program.daemonize) {
         // For containers we don't easily know size/tooLarge beforehand without extra commands
         // We'll just stream it
         socket.emit('file-start-info', { size: 0, tooLarge: false, isContainer: true });
-        tailer.readFromStart(fileIndex,
-          (line) => socket.emit('line', line),
-          () => socket.emit('read-end')
-        );
+        startRead(fileIndex);
         return;
       }
 
@@ -226,14 +242,10 @@ if (program.daemonize) {
       if (tooLarge && !force) return; // client will show warning / download prompt
 
       // Stream the whole file line by line back to this socket only
-      tailer.readFromStart(fileIndex,
-        (line) => socket.emit('line', line),
-        () => socket.emit('read-end')
-      );
+      startRead(fileIndex);
     });
   });
 
-  /**
   /**
    * Send incoming data
    */
@@ -249,6 +261,7 @@ if (program.daemonize) {
    * Handle signals
    */
   const cleanExit = () => {
+    tailer.close();
     // Stop accepting connections and let sockets drain; force-quit if
     // something (e.g. a stuck client) keeps the process alive.
     setTimeout(() => process.exit(), 5000).unref();
