@@ -13,6 +13,7 @@ Off by default. Enable with `--metrics`; the endpoint is `<url-path>/metrics`, b
 | `frontail_build_info{version}` | gauge | always 1 |
 | `frontail_uptime_seconds` | gauge | seconds since start |
 | `frontail_connected_clients` | gauge | browsers on the log socket |
+| `frontail_active_reads` | gauge | full-log reads in progress ("Start" in the UI); capped at 8 at once |
 | `frontail_sources` | gauge | files, containers, journal and ssh sources |
 | `frontail_lines_total{source}` | counter | lines read, per source |
 | `frontail_tail_errors_total` | counter | errors from tail, the container engine, journalctl or ssh |

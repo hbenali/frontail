@@ -39,6 +39,10 @@ frontail --allowed-origin https://logs.example.com ...
 
 Every response carries `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy` and a **Content-Security-Policy** (`script-src 'self'`, same-origin connections, `frame-ancestors 'self'`). Google Fonts is the only external origin allowed.
 
+## Resource limits
+
+A browser can ask for a source's full history ("Start"). Each request replaces that browser's previous one, and at most 8 run at the same time across all clients; extra requests get a `too many full-log reads in progress` message instead of piling up processes. `frontail_active_reads` in [Metrics](Metrics-and-health) shows the current count.
+
 ## Remote sources
 
 - `--ssh` validates the host and quotes the remote path, so a hostile value can't inject ssh options or remote commands. It uses `BatchMode=yes` and your normal ssh config and keys.

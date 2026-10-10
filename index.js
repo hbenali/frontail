@@ -15,6 +15,7 @@ const daemonize = require('./lib/daemonize');
 const resolveCredentials = require('./lib/credentials');
 const isOriginAllowed = require('./lib/origin');
 const createMetrics = require('./lib/metrics');
+const createReadLimiter = require('./lib/read_limiter');
 const { commandSources } = require('./lib/sources');
 const pkg = require('./package.json');
 
@@ -72,6 +73,7 @@ if (program.daemonize) {
     appBuilder.authorize(credentials.user, credentials.password);
   }
   const metrics = createMetrics(pkg.version);
+  const readLimiter = createReadLimiter();
   if (program.metrics) {
     appBuilder.metrics(metrics);
   }
@@ -248,18 +250,38 @@ if (program.daemonize) {
     // goes away mid-download doesn't leave a child process or file stream.
     const activeReads = new Set();
     const startRead = (fileIndex) => {
+      // A new request replaces this socket's previous read (e.g. the user
+      // switched source), so one client can never hold more than one.
+      activeReads.forEach((stop) => stop());
+      activeReads.clear();
+
+      const release = readLimiter.acquire();
+      if (!release) {
+        socket.emit('line', {
+          t: '[frontail] too many full-log reads in progress, try again in a moment',
+          s: null,
+        });
+        socket.emit('read-end');
+        return;
+      }
+
       const cancel = tailer.readFromStart(
         fileIndex,
         (line) => socket.emit('line', line),
         () => {
-          activeReads.delete(cancel);
+          activeReads.delete(stop);
+          release();
           socket.emit('read-end');
         }
       );
-      activeReads.add(cancel);
+      const stop = () => {
+        release();
+        cancel();
+      };
+      activeReads.add(stop);
     };
     socket.on('disconnect', () => {
-      activeReads.forEach((cancel) => cancel());
+      activeReads.forEach((stop) => stop());
       activeReads.clear();
     });
 
@@ -306,6 +328,11 @@ if (program.daemonize) {
     'frontail_connected_clients',
     'Browsers currently connected to the log socket.',
     () => filesIo.sockets.size
+  );
+  metrics.gauge(
+    'frontail_active_reads',
+    'Full-log reads in progress (read from beginning).',
+    () => readLimiter.active
   );
   metrics.gauge(
     'frontail_sources',
