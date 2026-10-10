@@ -1,0 +1,160 @@
+name: Trivy
+
+# Vulnerability, secret and misconfiguration reporting. Results land in the
+# repository's Security tab (code scanning) and in each run's summary; the
+# raw reports are kept as artifacts. This reports, it does not gate: raise
+# `exit-code` to '1' on a scan step to fail the build on findings.
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+  schedule:
+    # Weekly, so newly published CVEs are caught even without new commits.
+    - cron: '23 4 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: trivy-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  filesystem:
+    name: Dependencies, secrets and config
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Scan (SARIF for the Security tab)
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          scanners: vuln,secret,misconfig
+          severity: MEDIUM,HIGH,CRITICAL
+          ignore-unfixed: true
+          # Example manifests/compose files intentionally run simply
+          skip-dirs: test,docs
+          format: sarif
+          output: trivy-fs.sarif
+          limit-severities-for-sarif: true
+          hide-progress: true
+
+      - name: Scan (readable report)
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          scanners: vuln,secret,misconfig
+          severity: MEDIUM,HIGH,CRITICAL
+          ignore-unfixed: true
+          skip-dirs: test,docs
+          format: table
+          output: trivy-fs.txt
+          hide-progress: true
+
+      - name: Summarize
+        if: always()
+        run: |
+          {
+            echo '## Trivy: dependencies, secrets and config'
+            echo
+            if [ -s trivy-fs.txt ]; then
+              echo '```'
+              head -c 60000 trivy-fs.txt
+              echo '```'
+            else
+              echo 'No MEDIUM, HIGH or CRITICAL findings.'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload to code scanning
+        # Fork pull requests get a read-only token and cannot upload.
+        if: always() && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+        uses: github/codeql-action/upload-sarif@24c54180a607b1449ed407dd24f251e4e9147c8d # v4.38.3
+        with:
+          sarif_file: trivy-fs.sarif
+          category: trivy-filesystem
+
+      - name: Keep the reports
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: trivy-filesystem-report
+          path: |
+            trivy-fs.sarif
+            trivy-fs.txt
+          retention-days: 30
+
+  image:
+    name: Container image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Build the image
+        run: docker build -t frontail:scan .
+
+      - name: Scan (SARIF for the Security tab)
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: frontail:scan
+          scanners: vuln,secret
+          severity: MEDIUM,HIGH,CRITICAL
+          ignore-unfixed: true
+          format: sarif
+          output: trivy-image.sarif
+          limit-severities-for-sarif: true
+          hide-progress: true
+
+      - name: Scan (readable report)
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: frontail:scan
+          scanners: vuln,secret
+          severity: MEDIUM,HIGH,CRITICAL
+          ignore-unfixed: true
+          format: table
+          output: trivy-image.txt
+          hide-progress: true
+
+      - name: Summarize
+        if: always()
+        run: |
+          {
+            echo '## Trivy: container image'
+            echo
+            if [ -s trivy-image.txt ]; then
+              echo '```'
+              head -c 60000 trivy-image.txt
+              echo '```'
+            else
+              echo 'No MEDIUM, HIGH or CRITICAL findings.'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload to code scanning
+        if: always() && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+        uses: github/codeql-action/upload-sarif@24c54180a607b1449ed407dd24f251e4e9147c8d # v4.38.3
+        with:
+          sarif_file: trivy-image.sarif
+          category: trivy-image
+
+      - name: Keep the reports
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: trivy-image-report
+          path: |
+            trivy-image.sarif
+            trivy-image.txt
+          retention-days: 30
