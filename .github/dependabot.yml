@@ -34,7 +34,9 @@ updates:
         update-types: ["minor", "patch"]
 
   - package-ecosystem: "docker"
-    directory: "/"
+    directories:
+      - "/"
+      - "/test/compose/containers-podman"
     schedule:
       interval: "weekly"
     commit-message:
