@@ -38,6 +38,20 @@ describe('connectBuilder', () => {
       .expect(401, done);
   });
 
+  it('should reject a wrong user or password', (done) => {
+    const app = connectBuilder('/').authorize('user', 'pass').build();
+
+    request(app)
+      .get('/')
+      .set('Authorization', `Basic ${Buffer.from('user:nope').toString('base64')}`)
+      .expect(401, () => {
+        request(app)
+          .get('/')
+          .set('Authorization', `Basic ${Buffer.from('other:pass').toString('base64')}`)
+          .expect(401, done);
+      });
+  });
+
   it('should build app allowing user to login', (done) => {
     const app = connectBuilder('/').authorize('user', 'pass').build();
     app.use((req, res) => {

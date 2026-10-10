@@ -69,7 +69,7 @@ describe('daemonize', () => {
       daemon.daemon.lastCall.args[1].should.containDeep(['-t', 'dark']);
     });
 
-    it('with authorization', () => {
+    it('with authorization, passing credentials via env not argv', () => {
       optionsParser.parse([
         'node',
         '/path/to/frontail',
@@ -83,12 +83,22 @@ describe('daemonize', () => {
         doAuthorization: true,
       });
 
-      daemon.daemon.lastCall.args[1].should.containDeep([
-        '-U',
-        'user',
-        '-P',
-        'passw0rd',
-      ]);
+      const { lastCall } = daemon.daemon;
+      lastCall.args[1].should.not.containEql('passw0rd');
+      lastCall.args[1].should.not.containEql('-P');
+      lastCall.args[2].env.FRONTAIL_USER.should.equal('user');
+      lastCall.args[2].env.FRONTAIL_PASSWORD.should.equal('passw0rd');
+    });
+
+    it('with authorization from resolved credentials', () => {
+      daemonize('script', optionsParser, {
+        doAuthorization: true,
+        credentials: { user: 'bob', password: 'from-file' },
+      });
+
+      const { env } = daemon.daemon.lastCall.args[2];
+      env.FRONTAIL_USER.should.equal('bob');
+      env.FRONTAIL_PASSWORD.should.equal('from-file');
     });
 
     it('without authorization if option doAuthorization not passed', () => {
@@ -103,12 +113,7 @@ describe('daemonize', () => {
 
       daemonize('script', optionsParser);
 
-      daemon.daemon.lastCall.args[1].should.not.containDeep([
-        '-U',
-        'user',
-        '-P',
-        'passw0rd',
-      ]);
+      daemon.daemon.lastCall.args[2].should.not.have.property('env');
     });
 
     it('with secure connection', () => {

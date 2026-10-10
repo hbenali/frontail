@@ -76,7 +76,7 @@ docker run -d -p 9001:9001 -v /var/log:/log hbenali/frontail /log/syslog
 - Per-line timestamps toggle
 - Live stats: total / visible / errors / warnings
 - Tailing multiple files and stdin
-- Basic authentication (`-U` / `-P`)
+- Basic authentication (`-U` / `-P`, or `--password-file` / `FRONTAIL_USER` + `FRONTAIL_PASSWORD` to keep the password out of `ps`)
 - HTTPS (`-k` / `-c`)
 - Running behind a path prefix (`--url-path`, `--path`)
 - Customisable log highlighting presets
@@ -113,7 +113,8 @@ Options:
   -t, --theme <theme>           name of the theme (default, dark)
   -d, --daemonize               run as daemon
   -U, --user <username>         Basic Auth username (requires -P)
-  -P, --password <password>     Basic Auth password (requires -U)
+  -P, --password <password>     Basic Auth password (requires -U); visible in `ps`, prefer the options below
+  --password-file <path>        read the Basic Auth password from a file (e.g. a Docker/k8s secret)
   -k, --key <key.pem>           Private key for HTTPS (requires -c)
   -c, --certificate <cert.pem>  Certificate for HTTPS (requires -k)
   -C, --container <container>   container name or id

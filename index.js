@@ -12,6 +12,7 @@ const connectBuilder = require('./lib/connect_builder');
 const program = require('./lib/options_parser');
 const serverBuilder = require('./lib/server_builder');
 const daemonize = require('./lib/daemonize');
+const resolveCredentials = require('./lib/credentials');
 const pkg = require('./package.json');
 
 /**
@@ -26,7 +27,8 @@ if (program.args.length === 0 && program.container.length === 0) {
 /**
  * Validate params
  */
-const doAuthorization = !!(program.user && program.password);
+const credentials = resolveCredentials(program);
+const doAuthorization = !!(credentials.user && credentials.password);
 const doSecure = !!(program.key && program.certificate);
 const sessionSecret = crypto.randomBytes(32).toString('hex');
 const files = [].concat(program.args).concat(program.container).join(' ');
@@ -35,6 +37,7 @@ const urlPath = program.urlPath.replace(/\/$/, ''); // remove trailing slash
 
 if (program.daemonize) {
   daemonize(__filename, program, {
+    credentials,
     doAuthorization,
     doSecure,
   });
@@ -45,7 +48,7 @@ if (program.daemonize) {
   const appBuilder = connectBuilder(urlPath).health();
   if (doAuthorization) {
     appBuilder.session(sessionSecret, doSecure);
-    appBuilder.authorize(program.user, program.password);
+    appBuilder.authorize(credentials.user, credentials.password);
   }
   appBuilder
     .static(path.join(__dirname, 'web', 'assets'))
