@@ -2,6 +2,8 @@
 
 ## Layout
 
+![frontail web UI](https://raw.githubusercontent.com/hbenali/frontail/master/docs/screenshots/overview.png)
+
 A sidebar (sources, live stats, filter, saved filters, highlights, controls, themes) and the log view. The sidebar collapses; on phones it becomes a full-screen sheet opened with **☰**.
 
 ## Keyboard shortcuts

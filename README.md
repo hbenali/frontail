@@ -8,7 +8,9 @@
 
 `frontail` is a Node.js application that streams log files to the browser — `tail -F` with a UI. Point it at any file (or stdin) and watch lines appear in real time.
 
-**[👉 Try the live demo](https://frontail.hbenali.ovh/)** — fake logs streaming continuously across every format frontail auto-colorizes (apache2/nginx, Tomcat, Log4j/Logback, syslog, ANSI-colored sources).
+**[👉 Try the live demo](https://frontail.hbenali.ovh/)** — fake logs streaming continuously across every format frontail auto-colorizes (apache2/nginx, Tomcat, Log4j/Logback, syslog, JSON lines, ANSI-colored sources).
+
+![frontail streaming colorized logs from several sources](docs/screenshots/overview.png)
 
 ---
 

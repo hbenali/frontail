@@ -2,7 +2,7 @@
 
 Colorizing is **on by default**. Start with `--ui-no-colors` to turn it off server-wide; each viewer can flip the **Colors** button in the sidebar, and that per-browser choice is remembered and overrides the server default.
 
-![Colorized apache2 access log](https://raw.githubusercontent.com/hbenali/frontail/master/docs/screenshots/overview.png)
+![frontail with several colorized log sources](https://raw.githubusercontent.com/hbenali/frontail/master/docs/screenshots/overview.png)
 
 ## How a line is colored
 
@@ -36,8 +36,12 @@ Not seeing your format? Use [Custom format rules](Custom-format-rules), or open 
 
 ## Screenshots
 
+Taken from the [live demo](https://frontail.hbenali.ovh/).
+
 | Format | Example |
 | --- | --- |
+| Apache / Nginx access log | ![Apache/Nginx access log](https://raw.githubusercontent.com/hbenali/frontail/master/docs/screenshots/access-log.png) |
+| JSON lines / logfmt | ![JSON-lines log](https://raw.githubusercontent.com/hbenali/frontail/master/docs/screenshots/json-lines.png) |
 | Nginx error log | ![Nginx error log](https://raw.githubusercontent.com/hbenali/frontail/master/docs/screenshots/nginx-error.png) |
 | Apache2 error log | ![Apache2 error log](https://raw.githubusercontent.com/hbenali/frontail/master/docs/screenshots/apache-error.png) |
 | Tomcat / Catalina | ![Tomcat catalina.out](https://raw.githubusercontent.com/hbenali/frontail/master/docs/screenshots/catalina.png) |
