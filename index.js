@@ -1,6 +1,6 @@
 'use strict';
 
-const cookie = require('cookie');
+const { parseCookie } = require('cookie');
 const cookieParser = require('cookie-parser');
 const crypto = require('crypto');
 const path = require('path');
@@ -80,27 +80,31 @@ if (program.daemonize) {
   const io = new Server({ path: `${urlPath}/socket.io` });
   io.attach(server);
 
-  if (doAuthorization) {
-    io.use((socket, next) => {
-      const handshakeData = socket.request;
-      if (handshakeData.headers.cookie) {
-        const cookies = cookie.parse(handshakeData.headers.cookie);
-        const sessionIdEncoded = cookies['connect.sid'];
-        if (!sessionIdEncoded) {
-          return next(new Error('Session cookie not provided'), false);
-        }
-        const sessionId = cookieParser.signedCookie(
-          sessionIdEncoded,
-          sessionSecret
-        );
-        if (sessionId) {
-          return next(null);
-        }
-        return next(new Error('Invalid cookie'), false);
+  // socket.io middleware registered on `io` only guards the main "/"
+  // namespace, so it must also be applied to the log namespace below.
+  const requireSession = (socket, next) => {
+    const handshakeData = socket.request;
+    if (handshakeData.headers.cookie) {
+      const cookies = parseCookie(handshakeData.headers.cookie);
+      const sessionIdEncoded = cookies['connect.sid'];
+      if (!sessionIdEncoded) {
+        return next(new Error('Session cookie not provided'), false);
       }
+      const sessionId = cookieParser.signedCookie(
+        sessionIdEncoded,
+        sessionSecret
+      );
+      if (sessionId) {
+        return next(null);
+      }
+      return next(new Error('Invalid cookie'), false);
+    }
 
-      return next(new Error('No cookie in header'), false);
-    });
+    return next(new Error('No cookie in header'), false);
+  };
+
+  if (doAuthorization) {
+    io.use(requireSession);
   }
 
   /**
@@ -148,7 +152,12 @@ if (program.daemonize) {
   // File-size threshold for warning (50 MB)
   const FILE_SIZE_WARNING_BYTES = 50 * 1024 * 1024;
 
-  const filesSocket = io.of(`/${filesNamespace}`).on('connection', (socket) => {
+  const filesIo = io.of(`/${filesNamespace}`);
+  if (doAuthorization) {
+    filesIo.use(requireSession);
+  }
+
+  const filesSocket = filesIo.on('connection', (socket) => {
     socket.emit('options:lines', program.lines);
     socket.emit('options:version', pkg.version);
 
