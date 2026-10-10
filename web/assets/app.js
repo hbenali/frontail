@@ -1295,6 +1295,18 @@ window.App = (function app(window, document) {
         });
       }
 
+      // Index (in the server's sources list) of the source whose full log a
+      // "read from beginning" request should load; the first one when none
+      // is selected.
+      function _readSourceIndex() {
+        if (_selectedSource && _sources) {
+          for (var k = 0; k < _sources.length; k++) {
+            if (_sources[k].name === _selectedSource) return k;
+          }
+        }
+        return _currentFileIndex;
+      }
+
       // ── Download helper (shared by button + modal) ───────────────
       function _triggerDownload(sanitize) {
         var href;
@@ -1302,18 +1314,24 @@ window.App = (function app(window, document) {
         if (_selectedSource && _sources) {
           var fileIdx = 0;
           var containerIdx = 0;
+          var commandIdx = 0;
           for (var i = 0; i < _sources.length; i++) {
+            var type = _sources[i].type;
             if (_sources[i].name === _selectedSource) {
-              if (_sources[i].type === 'container') {
+              if (type === 'container') {
                 href = _urlPath + '/download?container=' + containerIdx;
                 label = 'Downloading container logs…';
+              } else if (type === 'journal' || type === 'ssh') {
+                href = _urlPath + '/download?command=' + commandIdx;
+                label = 'Downloading ' + (type === 'journal' ? 'journal' : 'remote file') + '…';
               } else {
                 href = _urlPath + '/download?file=' + fileIdx;
                 label = 'Downloading file…';
               }
               break;
             }
-            if (_sources[i].type === 'container') containerIdx++;
+            if (type === 'container') containerIdx++;
+            else if (type === 'journal' || type === 'ssh') commandIdx++;
             else fileIdx++;
           }
         }
@@ -1372,14 +1390,14 @@ window.App = (function app(window, document) {
       if (_elModalLoadAnyway) {
         _elModalLoadAnyway.addEventListener('click', function() {
           _closeModal();
-          _socket.emit('read-from-start', { fileIndex: _currentFileIndex, force: true });
+          _socket.emit('read-from-start', { fileIndex: _readSourceIndex(), force: true });
           _showToast('Loading full file… this may take a moment');
         });
       }
 
       if (_elReadFromStartBtn) {
         _elReadFromStartBtn.addEventListener('click', function() {
-          _socket.emit('read-from-start', { fileIndex: _currentFileIndex });
+          _socket.emit('read-from-start', { fileIndex: _readSourceIndex() });
           _showToast('Requesting ' + (_isContainer ? 'logs' : 'file') + ' from beginning…');
         });
       }

@@ -187,4 +187,33 @@ describe('tail', () => {
 
     setTimeout(done, 200);
   });
+
+  it('reassembles a tail error message split across stderr chunks', (done) => {
+    const childProcess = require('child_process');
+    const { PassThrough } = require('stream');
+    const sinon = require('sinon');
+    const { EventEmitter } = require('events');
+
+    const cp = new EventEmitter();
+    cp.stdout = new PassThrough();
+    cp.stderr = new PassThrough();
+    cp.kill = () => {};
+    const spawn = sinon.stub(childProcess, 'spawn').returns(cp);
+
+    const tailer = makeTail('/x/split.log', { buffer: 0 });
+    spawn.restore();
+    const errors = [];
+    tailer.on('error', (e) => errors.push(e));
+
+    cp.stderr.write("tail: cannot open '/x/split.log' for reading");
+    cp.stderr.write(': No such file or directory\n');
+
+    setTimeout(() => {
+      errors.should.have.length(1);
+      errors[0].message.should.equal(
+        "cannot open '/x/split.log' for reading: No such file or directory"
+      );
+      done();
+    }, 50);
+  });
 });

@@ -15,13 +15,28 @@ const daemonize = require('./lib/daemonize');
 const resolveCredentials = require('./lib/credentials');
 const isOriginAllowed = require('./lib/origin');
 const createMetrics = require('./lib/metrics');
+const { commandSources } = require('./lib/sources');
 const pkg = require('./package.json');
 
 /**
  * Parse args
  */
 const program = parseOptions(process.argv);
-if (program.args.length === 0 && program.container.length === 0) {
+
+// Validates --journal-unit / --ssh up front, with a readable message.
+let extraSources;
+try {
+  extraSources = commandSources(program, 0);
+} catch (e) {
+  console.error(e.message);
+  process.exit(1);
+}
+
+if (
+  program.args.length === 0 &&
+  program.container.length === 0 &&
+  extraSources.length === 0
+) {
   console.error('Arguments needed, use --help');
   process.exit();
 }
@@ -33,7 +48,11 @@ const credentials = resolveCredentials(program);
 const doAuthorization = !!(credentials.user && credentials.password);
 const doSecure = !!(program.key && program.certificate);
 const sessionSecret = crypto.randomBytes(32).toString('hex');
-const files = [].concat(program.args).concat(program.container).join(' ');
+const files = []
+  .concat(program.args)
+  .concat(program.container)
+  .concat(extraSources.map((src) => src.name))
+  .join(' ');
 const filesNamespace = crypto.createHash('md5').update(files).digest('hex');
 const urlPath = program.urlPath.replace(/\/$/, ''); // remove trailing slash
 
@@ -60,7 +79,12 @@ if (program.daemonize) {
     .static(path.join(__dirname, 'web', 'assets'))
     .download(
       program.args.map((f) => path.resolve(f)),
-      { containers: program.container, engine: program.containerEngine }
+      {
+        containers: program.container,
+        engine: program.containerEngine,
+        // resolved lazily: the tailer is created after the HTTP app
+        commands: () => tailer.getReadCommands().filter((c) => c.type !== 'container'),
+      }
     )
     .index(
       path.join(__dirname, 'web', 'index.html'),
@@ -165,6 +189,9 @@ if (program.daemonize) {
     buffer: program.number,
     container: program.container,
     containerEngine: program.containerEngine,
+    journal: program.journal,
+    journalUnit: program.journalUnit,
+    ssh: program.ssh,
   });
 
   // File-size threshold for warning (50 MB)
@@ -205,7 +232,7 @@ if (program.daemonize) {
     socket.emit('options:sources', tailer.getSources());
 
     socket.emit('options:source-info', {
-      isContainer: !!(program.container && program.container.length > 0),
+      isContainer: tailer.getSources().some((src) => src.type !== 'file'),
     });
 
     tailer.getBuffer().forEach((line) => {
@@ -237,20 +264,20 @@ if (program.daemonize) {
     });
 
     socket.on('read-from-start', (data) => {
+      // fileIndex indexes the sources list sent in options:sources
       const fileIndex = (data && data.fileIndex) || 0;
       const force     = !!(data && data.force);
-      const isContainer = !!(program.container && program.container.length > 0);
+      const source = tailer.getSources()[fileIndex];
+      if (!source) return;
 
-      if (isContainer) {
-        // For containers we don't easily know size/tooLarge beforehand without extra commands
-        // We'll just stream it
+      if (source.type !== 'file') {
+        // Containers, journal and ssh: size isn't known up front, just stream it
         socket.emit('file-start-info', { size: 0, tooLarge: false, isContainer: true });
         startRead(fileIndex);
         return;
       }
 
-      const filePath  = program.args[fileIndex];
-      if (!filePath) return;
+      const filePath = source.name;
 
       let stat;
       try { stat = fs.statSync(filePath); } catch { return; }

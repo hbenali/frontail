@@ -129,6 +129,9 @@ Options:
   --ui-no-colors                disable log colorizing (ANSI + format autodetection), on by default
   --ui-colors-preset <path>     extra log colorizing rules JSON (see ./preset/colors-example.json)
   --path <path>                 prefix path (default: /)
+  --journal                     follow the systemd journal (journalctl)
+  --journal-unit <unit>         follow only this systemd unit (repeatable, implies --journal)
+  --ssh <target>                follow a remote file over ssh: [user@]host:/absolute/path (repeatable)
   --allowed-origin <origin>     extra browser origin allowed to open the socket (repeatable); same-host origins always are
   --metrics                     expose Prometheus metrics at <url-path>/metrics
   --config <path>               JSON config file (option names + optional "files" array); CLI flags win
@@ -139,6 +142,24 @@ Author:  Houssem Ben Ali
 Website: https://github.com/hbenali/frontail
 Contact: contact@hbenali.ovh
 ```
+
+### Sources beyond local files
+
+```sh
+# Systems without /var/log/syslog (Fedora, Arch, recent Debian/Ubuntu): use the journal
+frontail --journal
+frontail --journal-unit sshd --journal-unit nginx     # only these units
+
+# Remote files over ssh (key-based auth; ssh never prompts)
+frontail --ssh deploy@web1:/var/log/syslog --ssh deploy@web2:/var/log/nginx/error.log
+
+# Mix with local files and containers
+frontail /var/log/app.log -C api --journal-unit sshd --ssh web1:/var/log/syslog
+```
+
+- The user running frontail needs permission to read the journal (member of `systemd-journal` or `adm`). Unreadable or missing files, a failed ssh login, or a dropped connection are shown in the log view as `[frontail] <source>: <reason>`.
+- ssh uses your normal `~/.ssh/config` (ports, keys, jump hosts) and `BatchMode=yes`, so host keys must already be trusted. A dropped session is reported and not reconnected automatically.
+- "Read from beginning" and downloads work for journal and ssh sources too.
 
 ### Config file
 
@@ -315,7 +336,7 @@ Two things happen per line, depending on whether it already carries ANSI escape 
   - Nginx error log
   - Tomcat/Catalina (`juli` one-line format and the classic two-line format)
   - Log4j/Logback pipe-delimited (`2024-01-01 12:00:00,000 | INFO | message [logger<thread>]`)
-  - Generic syslog
+  - Generic syslog (also what `--journal` produces)
   - Spring Boot default console format, and Logback/Log4j `HH:mm:ss.SSS [thread] LEVEL logger - msg`
   - Python `logging` (`INFO:name:msg` and `asctime - name - LEVEL - msg`)
   - PostgreSQL server log, MySQL 8 / MariaDB error log

@@ -23,12 +23,16 @@ Run both `npm test` and `npm run lint` before committing; CI (`.github/workflows
 - `lib/origin.js`: Origin check for socket.io handshakes (CSWSH guard); `--allowed-origin` extends it.
 - `lib/credentials.js`: Basic Auth credentials from flags > `--password-file` > `FRONTAIL_USER`/`FRONTAIL_PASSWORD`.
 - `lib/connect_builder.js`: connect middleware (health, security headers, auth, session, static, index, downloads).
+- `lib/sources.js`: pure builders for command-backed sources (`--journal`, `--journal-unit`, `--ssh`): `{ name, type, follow, read }`, with input validation (option/shell-injection safe). `index.js` resolves/validates them up front.
 - `lib/tail.js`: spawns `tail -F` / container log commands, keeps a line buffer. `lib/daemonize.js`: `-d` mode.
 - `lib/untildify.js`, `lib/command_exists.js`: tiny in-repo replacements for ESM-only/abandoned packages.
 - `web/assets/app.js`: the whole browser UI (one file, ES5-style `var`, no build step). `web/index.html` is a template with `__TITLE__`/`__THEME__`/... placeholders.
 - `preset/`: highlight and colorizing presets. `demo/`: public-demo log generator.
 
 ## Conventions and gotchas
+
+- **Source indexing:** `fileIndex` in `read-from-start` indexes `tailer.getSources()` (containers first, then files, then journal/ssh), the same list sent as `options:sources`. The client resolves it from the selected source name.
+- **Child stderr is chunked arbitrarily:** read it with `byline`, never `on('data')` + string tests, or messages split mid-line.
 
 - **Never put the Basic Auth password in argv.** Daemon mode hands credentials to the child through env vars. Compare credentials with `crypto.timingSafeEqual` (see `safeEqual`).
 - **socket.io middleware is per namespace.** `io.use()` guards only `/`; logs stream on `/<md5 of files>`, so `requireSession` is applied to that namespace too. `test/socket_auth.js` guards this; do not remove it.
