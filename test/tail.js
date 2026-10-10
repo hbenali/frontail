@@ -136,4 +136,55 @@ describe('tail', () => {
 
     tailer.readFromStart(3, () => {}, () => {}).should.be.a.Function;
   });
+
+  it('reports a missing file as an error instead of failing silently', (done) => {
+    const missing = '/definitely/not/here/syslog';
+    const tailer = makeTail(missing, { buffer: 0 });
+
+    tailer.on('error', (err) => {
+      err.source.should.equal(missing);
+      err.message.should.match(/cannot open.*No such file or directory/);
+      tailer.getErrors().should.have.length(1);
+      done();
+    });
+  });
+
+  it('reports an unreadable file (permission denied)', function unreadable(done) {
+    if (process.getuid && process.getuid() === 0) return this.skip();
+    temp.open(TEMP_FILE_PROFIX, (err, info) => {
+      fs.closeSync(info.fd);
+      fs.chmodSync(info.path, 0o000);
+      const tailer = makeTail(info.path, { buffer: 0 });
+
+      tailer.on('error', (e) => {
+        e.source.should.equal(info.path);
+        e.message.should.match(/Permission denied/);
+        done();
+      });
+    });
+    return undefined;
+  });
+
+  it('does not report the same file error twice in a row', (done) => {
+    const missing = '/definitely/not/here/again';
+    const tailer = makeTail(missing, { buffer: 0 });
+    const errors = [];
+
+    tailer.on('error', (e) => {
+      errors.push(e);
+      // Give a duplicate time to (wrongly) show up after the first report.
+      if (errors.length === 1) {
+        setTimeout(() => {
+          errors.should.have.length(1);
+          done();
+        }, 300);
+      }
+    });
+  });
+
+  it('does not throw for a bad file when nobody listens for errors', (done) => {
+    makeTail('/definitely/not/here/silent', { buffer: 0 });
+
+    setTimeout(done, 200);
+  });
 });
