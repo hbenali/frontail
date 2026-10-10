@@ -9,11 +9,12 @@ Node.js app that streams log files (or `docker`/`podman` container logs, or stdi
 ```sh
 npm test        # mocha -r should test/*.js   (starts a real server in test/socket_auth.js)
 npm run lint    # eslint 10, flat config in eslint.config.js
+npm run typecheck  # tsc --noEmit over index.js + lib/ (JSDoc types, checkJs); keep it at 0 errors
 npm run pkg     # standalone binaries via @yao-pkg/pkg into dist/
 node bin/frontail -p 9001 some.log   # run locally
 ```
 
-Run both `npm test` and `npm run lint` before committing; CI (`.github/workflows/push.yml`) runs them on Node 22 and 24.
+Run `npm test`, `npm run lint` and `npm run typecheck` before committing; CI (`.github/workflows/push.yml`) runs them on Node 22 and 24.
 
 ## Layout
 

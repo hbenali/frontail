@@ -7,10 +7,11 @@ git clone https://github.com/hbenali/frontail && cd frontail
 npm install
 npm test        # mocha; some tests start a real server
 npm run lint    # eslint 10 (flat config)
+npm run typecheck  # tsc over lib/ and index.js (JSDoc types)
 node bin/frontail -p 9001 some.log
 ```
 
-Requires Node 22.12+. Run both `npm test` and `npm run lint` before opening a pull request; CI runs them on Node 22 and 24.
+Requires Node 22.12+. Run `npm test`, `npm run lint` and `npm run typecheck` before opening a pull request; CI runs them on Node 22 and 24.
 
 ## Architecture in one minute
 

@@ -163,7 +163,7 @@ if (program.daemonize) {
     }
 
     if (fs.existsSync(presetPath)) {
-      highlightConfig = JSON.parse(fs.readFileSync(presetPath));
+      highlightConfig = JSON.parse(fs.readFileSync(presetPath, 'utf8'));
     } else {
       throw new Error(`Preset file ${presetPath} doesn't exists`);
     }
@@ -176,7 +176,7 @@ if (program.daemonize) {
   if (program.uiColorsPreset) {
     const colorsPresetPath = path.resolve(untildify(program.uiColorsPreset));
     if (fs.existsSync(colorsPresetPath)) {
-      colorsPreset = JSON.parse(fs.readFileSync(colorsPresetPath));
+      colorsPreset = JSON.parse(fs.readFileSync(colorsPresetPath, 'utf8'));
     } else {
       throw new Error(`Colors preset file ${colorsPresetPath} doesn't exists`);
     }

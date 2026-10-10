@@ -33,6 +33,9 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@types/mocha": "10.0.10",
+    "@types/node": "22.20.5",
+    "@types/sinon": "22.0.0",
     "@yao-pkg/pkg": "6.23.0",
     "eslint": "^10.12.0",
     "eslint-config-prettier": "^10.1.8",
@@ -43,10 +46,12 @@
     "sinon": "22.1.0",
     "socket.io-client": "4.8.4",
     "supertest": "7.3.1",
-    "temp": "0.9.4"
+    "temp": "0.9.4",
+    "typescript": "7.0.2"
   },
   "scripts": {
     "lint": "eslint .",
+    "typecheck": "tsc -p tsconfig.json",
     "test": "NODE_OPTIONS='--no-deprecation' mocha -r should --exit test/*.js",
     "pkg": "pkg --no-bytecode --out-path=dist ."
   },
