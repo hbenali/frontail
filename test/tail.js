@@ -84,6 +84,24 @@ describe('tail', () => {
     process.listenerCount('exit').should.equal(before);
   });
 
+  it('readFromStart with maxLines streams only the tail', (done) => {
+    temp.open(TEMP_FILE_PROFIX, (err, info) => {
+      writeLines(info.fd, 5);
+      const tailer = makeTail(info.path, { buffer: 0 });
+      const lines = [];
+
+      tailer.readFromStart(
+        0,
+        (line) => lines.push(line.t),
+        () => {
+          lines.should.eql(['line3', 'line4']);
+          done();
+        },
+        2
+      );
+    });
+  });
+
   it('readFromStart streams the whole file then ends', (done) => {
     temp.open(TEMP_FILE_PROFIX, (err, info) => {
       writeLines(info.fd, 5);

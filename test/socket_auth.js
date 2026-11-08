@@ -14,16 +14,15 @@ describe('socket.io authorization', function socketAuth() {
 
   const port = 20000 + Math.floor(Math.random() * 20000);
   const base = `http://localhost:${port}`;
-  const basic = `Basic ${Buffer.from('user:pass').toString('base64')}`;
   let dir;
   let proc;
   let namespace;
   let sessionCookie;
 
-  function get() {
+  function getRequest(urlPath, headers) {
     return new Promise((resolve, reject) => {
       http
-        .get(base, { headers: { authorization: basic } }, (res) => {
+        .get(`${base}${urlPath}`, { headers }, (res) => {
           let body = '';
           res.on('data', (c) => {
             body += c;
@@ -31,6 +30,36 @@ describe('socket.io authorization', function socketAuth() {
           res.on('end', () => resolve({ res, body }));
         })
         .on('error', reject);
+    });
+  }
+
+  function get(headers) {
+    return getRequest('/', headers);
+  }
+
+  // The sign-in form is the only way in: the browser dialog is gone.
+  function login(user, pass) {
+    const payload = new URLSearchParams({ username: user, password: pass, next: '' }).toString();
+    return new Promise((resolve, reject) => {
+      const req = http.request(
+        `${base}/login`,
+        {
+          method: 'POST',
+          headers: {
+            'content-type': 'application/x-www-form-urlencoded',
+            'content-length': Buffer.byteLength(payload),
+          },
+        },
+        (res) => {
+          let body = '';
+          res.on('data', (c) => {
+            body += c;
+          });
+          res.on('end', () => resolve({ res, body }));
+        }
+      );
+      req.on('error', reject);
+      req.end(payload);
     });
   }
 
@@ -73,9 +102,11 @@ describe('socket.io authorization', function socketAuth() {
       [path.join(__dirname, '..', 'bin', 'frontail'), '-p', port, '-U', 'user', '-P', 'pass', log],
       { stdio: 'ignore' }
     );
-    const { res, body } = await waitForServer(50);
+    await waitForServer(50);
+    const loggedIn = await login('user', 'pass');
+    sessionCookie = loggedIn.res.headers['set-cookie'][0].split(';')[0];
+    const { body } = await get({ cookie: sessionCookie });
     namespace = body.match(/[0-9a-f]{32}/)[0];
-    sessionCookie = res.headers['set-cookie'][0].split(';')[0];
   });
 
   after(() => {
@@ -105,16 +136,14 @@ describe('socket.io authorization', function socketAuth() {
     (await connect('connect.sid=anything')).should.equal('Invalid cookie');
   });
 
-  it('does not hand a session cookie to a visitor who failed Basic Auth', async () => {
-    const res = await new Promise((resolve, reject) => {
-      http.get(base, (r) => {
-        r.resume();
-        r.on('end', () => resolve(r));
-      }).on('error', reject);
-    });
+  it('does not hand a session cookie to an anonymous visitor or a failed sign-in', async () => {
+    const anonymous = await get();
+    anonymous.res.statusCode.should.equal(302);
+    (anonymous.res.headers['set-cookie'] === undefined).should.be.true;
 
-    res.statusCode.should.equal(401);
-    (res.headers['set-cookie'] === undefined).should.be.true;
+    const failed = await login('user', 'wrong');
+    failed.res.statusCode.should.equal(401);
+    (failed.res.headers['set-cookie'] === undefined).should.be.true;
   });
 
   it('rejects a connection with a forged cookie', async () => {

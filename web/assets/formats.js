@@ -315,12 +315,20 @@
     'gi'
   );
 
+  var LEVEL_WORD_RX = /^(trace|debug|info|notice|warning|warn|error|err|severe|fatal|critical|crit|emergency|emerg|alert)$/i;
+
   function _applyGenericColors(html) {
     return html.replace(GENERIC_FC_RX, function(m, time1, time2, level, ip, bracket, quoted) {
       if (time1 || time2) return _fcSpan('time', m);
       if (level) return _fcSpan(_fcLevelClass(m), m);
       if (ip) return _fcSpan('ip', m);
-      if (bracket) return _fcSpan('meta', m);
+      if (bracket) {
+        // A bracketed word can be the level itself: "[INFO]", "[WARN]".
+        // Colouring it as metadata is what made INFO look grey.
+        var inner = m.slice(1, -1).trim();
+        if (LEVEL_WORD_RX.test(inner)) return _fcSpan(_fcLevelClass(inner), m);
+        return _fcSpan('meta', m);
+      }
       if (quoted) return _fcSpan('str', m);
       return m;
     });

@@ -43,6 +43,31 @@ describe('frontail (start / resolveSettings)', function frontail() {
         .on('error', reject);
     });
 
+  const post = (base, urlPath, form, headers) =>
+    new Promise((resolve, reject) => {
+      const payload = new URLSearchParams(form).toString();
+      const req = http.request(
+        `${base}${urlPath}`,
+        {
+          method: 'POST',
+          headers: {
+            'content-type': 'application/x-www-form-urlencoded',
+            'content-length': Buffer.byteLength(payload),
+            ...headers,
+          },
+        },
+        (res) => {
+          let body = '';
+          res.on('data', (c) => {
+            body += c;
+          });
+          res.on('end', () => resolve({ status: res.statusCode, headers: res.headers, body }));
+        }
+      );
+      req.on('error', reject);
+      req.end(payload);
+    });
+
   beforeEach(() => {
     dir = fs.mkdtempSync(path.join(os.tmpdir(), 'frontail-inproc-'));
     log = path.join(dir, 'a.log');
@@ -124,14 +149,31 @@ describe('frontail (start / resolveSettings)', function frontail() {
       body.should.containEql(`frontail_lines_total{source="${log}"} 4`);
     });
 
-    it('protects the page and the socket when Basic Auth is configured', async () => {
+    it('protects the page and the socket behind the sign-in page', async () => {
       const { base } = await launch('-U', 'user', '-P', 'pass');
 
-      (await get(base, '/')).status.should.equal(401);
-      const authed = await get(base, '/', { authorization: `Basic ${Buffer.from('user:pass').toString('base64')}` });
+      // Anonymous visitors are redirected to the form, not challenged with a
+      // browser dialog.
+      const anonymous = await get(base, '/');
+      anonymous.status.should.equal(302);
+      anonymous.headers.location.should.match(/\/login/);
+
+      const form = await get(base, '/login');
+      form.status.should.equal(200);
+      form.body.should.containEql('name="username"');
+      form.body.should.containEql('name="password"');
+
+      const wrong = await post(base, '/login', { username: 'user', password: 'nope' });
+      wrong.status.should.equal(401);
+      (wrong.headers['set-cookie'] === undefined).should.be.true;
+
+      const ok = await post(base, '/login', { username: 'user', password: 'pass' });
+      ok.status.should.equal(303);
+      const cookie = ok.headers['set-cookie'][0].split(';')[0];
+
+      const authed = await get(base, '/', { cookie });
       authed.status.should.equal(200);
       const ns = authed.body.match(/[0-9a-f]{32}/)[0];
-      const cookie = authed.headers['set-cookie'][0].split(';')[0];
 
       const connect = (cookieHeader) =>
         new Promise((resolve) => {
@@ -153,6 +195,10 @@ describe('frontail (start / resolveSettings)', function frontail() {
       (await connect(cookie)).should.equal('connected');
       (await connect()).should.equal('No cookie in header');
       (await connect('connect.sid=anything')).should.equal('Invalid cookie');
+
+      // Logging out drops the session and the page is protected again.
+      await get(base, '/logout', { cookie });
+      (await get(base, '/', { cookie })).status.should.equal(302);
     });
 
     it('close() stops the server and the tailer', async () => {

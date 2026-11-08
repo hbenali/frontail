@@ -67,6 +67,9 @@ describe('read-from-start', function readFromStart() {
     socket.on('line', () => {
       lines += 1;
     });
+    socket.on('bulk-lines', (payload) => {
+      lines += (payload && payload.lines ? payload.lines.length : 0);
+    });
 
     const ended = new Promise((resolve) => socket.on('read-end', resolve));
     socket.emit('read-from-start', { fileIndex: 0 });
@@ -76,12 +79,33 @@ describe('read-from-start', function readFromStart() {
     socket.close();
   });
 
+  it('bounds the read to the last `lines` lines when asked', async () => {
+    const socket = await connect();
+    let lines = 0;
+    socket.on('line', () => {
+      lines += 1;
+    });
+    socket.on('bulk-lines', (payload) => {
+      lines += (payload && payload.lines ? payload.lines.length : 0);
+    });
+
+    const ended = new Promise((resolve) => socket.on('read-end', resolve));
+    socket.emit('read-from-start', { fileIndex: 0, lines: 100 });
+    await ended;
+
+    lines.should.equal(100);
+    socket.close();
+  });
+
   it('lets a new request replace an in-flight one: one read-end, the full file at the end', async () => {
     const socket = await connect();
     let lines = 0;
     let ends = 0;
     socket.on('line', () => {
       lines += 1;
+    });
+    socket.on('bulk-lines', (payload) => {
+      lines += (payload && payload.lines ? payload.lines.length : 0);
     });
     socket.on('read-end', () => {
       ends += 1;
