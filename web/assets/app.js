@@ -1121,9 +1121,7 @@ function _showToast(msg, duration) {
         toggle.className = 'log-dir-toggle' + (isOpen ? '' : ' collapsed');
         toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
         toggle.textContent = '▾';
-        toggle.addEventListener('click', function(ev) {
-          ev.preventDefault();
-          ev.stopPropagation();
+        var toggleDir = function() {
           var at = _collapsedLogDirs.indexOf(dirKey);
           if (at === -1) {
             _collapsedLogDirs.push(dirKey);
@@ -1132,14 +1130,20 @@ function _showToast(msg, duration) {
           }
           _saveSettings({ collapsedLogDirs: _collapsedLogDirs });
           _renderLogDirs();
+        };
+        toggle.addEventListener('click', function(ev) {
+          ev.preventDefault();
+          ev.stopPropagation();
+          toggleDir();
         });
         head.insertBefore(toggle, head.firstChild);
 
-        // The head is no longer a <label>, so keep click-to-toggle behaviour.
+        // Clicking anywhere on the row folds the folder. The checkbox is the
+        // only control that switches its files on or off, so a stray click on
+        // the folder name no longer wipes the whole directory.
         head.addEventListener('click', function(ev) {
-          if (ev.target === toggle || ev.target === dirCheck) return;
-          dirCheck.checked = !dirCheck.checked;
-          dirCheck.dispatchEvent(new Event('change'));
+          if (ev.target === dirCheck) return;
+          toggleDir();
         });
         group.appendChild(head);
 
@@ -1170,13 +1174,14 @@ function _showToast(msg, duration) {
           fileIcon.className = 'log-file-icon';
           fileIcon.innerHTML = '<svg width="12" height="12" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3.6 1.9h5.1l3.7 3.7v8.5H3.6z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/><path d="M8.6 1.9v3.8h3.8" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>';
           row.appendChild(fileIcon);
+          row.appendChild(cb);
 
           var nm = document.createElement('span');
           nm.className = 'log-file-name';
           nm.textContent = file.name || file.path;
           nm.title = file.path || '';
           row.appendChild(nm);
-          row.appendChild(cb);
+          row.classList.toggle('is-off', !cb.checked);
 
           list.appendChild(row);
         });

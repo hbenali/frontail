@@ -1507,7 +1507,13 @@ body {
   font-size: 11px;
   font-variant-numeric: tabular-nums;
 }
-.log-dir-file .log-file-check { margin-left: auto; }
+.log-dir-file .log-file-check {
+  margin-left: 0;
+  margin-right: 4px;
+  flex: 0 0 auto;
+}
+.log-dir-file.is-off { opacity: 0.45; }
+.log-dir-file.is-off .log-file-name { text-decoration: line-through; }
 .log-dir-file .log-file-name {
   min-width: 0;
   overflow: hidden;
