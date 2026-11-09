@@ -164,6 +164,7 @@
 
       'ui.toast.settingsSaved': 'Настройки сохранены',
       'ui.toast.settingsReset': 'Настройки сброшены',
+      'ui.toast.noSourcesSelected': 'Ни один источник не выбран — включите файлы в настройках',
       'ui.filter.all': 'Все',
       'ui.toast.bufferRange': 'Введите число от 100 до 1000000',
       'ui.settings.bufferLimit.label': 'Буфер лога',
@@ -341,6 +342,7 @@
 
       'ui.toast.settingsSaved': 'Settings saved',
       'ui.toast.settingsReset': 'Settings reset',
+      'ui.toast.noSourcesSelected': 'No sources selected — tick files in the settings',
       'ui.filter.all': 'All',
       'ui.toast.bufferRange': 'Enter a number between 100 and 1000000',
       'ui.settings.bufferLimit.label': 'Log buffer',

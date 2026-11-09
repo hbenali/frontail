@@ -1900,9 +1900,16 @@ function _showToast(msg, duration) {
         });
       } else {
         // "All sources": pull the tail of every file that is switched on, with
-        // one shared budget, instead of streaming one huge file in full.
+        // one shared budget, instead of streaming one huge file in full. If
+        // every file is ticked off there is nothing to join: say so instead of
+        // sending an empty list the server would answer with source 0.
+        var _wanted = _visibleSourceIndexes();
+        if (!_wanted.length) {
+          _showToast(_t('ui.toast.noSourcesSelected'));
+          return;
+        }
         _requestRead({
-          indexes: _visibleSourceIndexes(),
+          indexes: _wanted,
           lines: budget
         });
       }
@@ -2020,12 +2027,13 @@ function _showToast(msg, duration) {
         _elSettingsReset.addEventListener('click', function() {
           _setStartLines(DEFAULT_START_LINES);
           _bufferLimit = DEFAULT_LINES_LIMIT;
-          // "Reset" means a clean slate: nothing is ticked, so the sidebar
-          // stays empty until the operator picks the directories again.
-          var _allHidden = [];
-          for (var _k = 0; _k < _sources.length; _k++) _allHidden.push(_k);
-          _hiddenLogFiles = _allHidden;
-          _hiddenDraft = _allHidden.slice();
+          // "Reset" is a clean slate, not a "hide everything" switch: every
+          // source comes back ticked. Hiding all of them left the sidebar empty
+          // with no way back for the files that have no checkbox of their own,
+          // and "All" then asked the server for `indexes: []`, which made it
+          // read source 0 behind the operator's back.
+          _hiddenLogFiles = [];
+          _hiddenDraft = [];
           _saveSettings({
             startLines: _startLines,
             language: 'auto',
