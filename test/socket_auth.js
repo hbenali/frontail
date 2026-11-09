@@ -139,11 +139,11 @@ describe('socket.io authorization', function socketAuth() {
   it('does not hand a session cookie to an anonymous visitor or a failed sign-in', async () => {
     const anonymous = await get();
     anonymous.res.statusCode.should.equal(302);
-    (anonymous.res.headers['set-cookie'] === undefined).should.be.true;
+    (anonymous.res.headers['set-cookie'] === undefined).should.be.true();
 
     const failed = await login('user', 'wrong');
     failed.res.statusCode.should.equal(401);
-    (failed.res.headers['set-cookie'] === undefined).should.be.true;
+    (failed.res.headers['set-cookie'] === undefined).should.be.true();
   });
 
   it('rejects a connection with a forged cookie', async () => {

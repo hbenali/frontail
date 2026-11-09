@@ -21,8 +21,8 @@ describe('formats (browser colorizer module)', () => {
   });
 
   it('detects ANSI escape codes', () => {
-    formats.hasAnsiCodes('\u001b[31mred\u001b[0m').should.be.true;
-    formats.hasAnsiCodes('plain').should.be.false;
+    formats.hasAnsiCodes('\u001b[31mred\u001b[0m').should.be.true();
+    formats.hasAnsiCodes('plain').should.be.false();
   });
 
   describe('tryColorizeJson', () => {
@@ -35,9 +35,9 @@ describe('formats (browser colorizer module)', () => {
     });
 
     it('returns null for non-JSON and non-objects', () => {
-      (formats.tryColorizeJson('hello') === null).should.be.true;
-      (formats.tryColorizeJson('[1,2]') === null).should.be.true;
-      (formats.tryColorizeJson('{not json}') === null).should.be.true;
+      (formats.tryColorizeJson('hello') === null).should.be.true();
+      (formats.tryColorizeJson('[1,2]') === null).should.be.true();
+      (formats.tryColorizeJson('{not json}') === null).should.be.true();
     });
   });
 

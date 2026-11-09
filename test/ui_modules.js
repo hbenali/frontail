@@ -10,14 +10,14 @@ describe('ui util', () => {
   it('escapes html and regex metacharacters', () => {
     util.escapeHtml('<a href="x">&</a>').should.equal('&lt;a href=&quot;x&quot;&gt;&amp;&lt;/a&gt;');
     util.escapeRegExp('a.b*c(d)[e]').should.equal('a\\.b\\*c\\(d\\)\\[e\\]');
-    new RegExp(util.escapeRegExp('1+1=2?')).test('1+1=2?').should.be.true;
+    new RegExp(util.escapeRegExp('1+1=2?')).test('1+1=2?').should.be.true();
   });
 
   it('takes the last path segment', () => {
     util.basename('/var/log/syslog').should.equal('syslog');
     util.basename('journal:sshd').should.equal('journal:sshd');
     util.basename('/dir/').should.equal('/dir/');
-    (util.basename('') === '').should.be.true;
+    (util.basename('') === '').should.be.true();
   });
 
   it('formats byte sizes', () => {
@@ -64,7 +64,7 @@ describe('ui settings', () => {
     s.save({ wrap: true });
 
     s.load().should.eql({ theme: 'dark', wrap: true });
-    JSON.parse(storage.data[settings.STORAGE_KEY]).wrap.should.be.true;
+    JSON.parse(storage.data[settings.STORAGE_KEY]).wrap.should.be.true();
   });
 
   it('returns {} when nothing is stored or the data is corrupt', () => {
@@ -106,25 +106,25 @@ describe('ui filters', () => {
   const state = (patch) => ({ ...base, ...patch });
 
   it('shows everything without a filter', () => {
-    filters.isVisible('anything', 's', base).should.be.true;
+    filters.isVisible('anything', 's', base).should.be.true();
   });
 
   it('plain text filter is case-insensitive by default and escapes metacharacters', () => {
-    filters.matchesText('Disk FULL', state({ filterValue: 'disk full' })).should.be.true;
-    filters.matchesText('a1b', state({ filterValue: 'a.b' })).should.be.false; // "." is literal
-    filters.matchesText('a.b', state({ filterValue: 'a.b' })).should.be.true;
+    filters.matchesText('Disk FULL', state({ filterValue: 'disk full' })).should.be.true();
+    filters.matchesText('a1b', state({ filterValue: 'a.b' })).should.be.false(); // "." is literal
+    filters.matchesText('a.b', state({ filterValue: 'a.b' })).should.be.true();
   });
 
   it('honours case-sensitive, regex and invert', () => {
-    filters.matchesText('Disk', state({ filterValue: 'disk', caseSensitive: true })).should.be.false;
-    filters.matchesText('error 42', state({ filterValue: 'error \\d+', regexMode: true })).should.be.true;
-    filters.matchesText('ok', state({ filterValue: 'error', invertFilter: true })).should.be.true;
-    filters.matchesText('an error', state({ filterValue: 'error', invertFilter: true })).should.be.false;
+    filters.matchesText('Disk', state({ filterValue: 'disk', caseSensitive: true })).should.be.false();
+    filters.matchesText('error 42', state({ filterValue: 'error \\d+', regexMode: true })).should.be.true();
+    filters.matchesText('ok', state({ filterValue: 'error', invertFilter: true })).should.be.true();
+    filters.matchesText('an error', state({ filterValue: 'error', invertFilter: true })).should.be.false();
   });
 
   it('an invalid regex hides nothing', () => {
-    filters.matchesText('x', state({ filterValue: '(', regexMode: true })).should.be.true;
-    (filters.buildRegex(state({ filterValue: '(', regexMode: true })) === null).should.be.true;
+    filters.matchesText('x', state({ filterValue: '(', regexMode: true })).should.be.true();
+    (filters.buildRegex(state({ filterValue: '(', regexMode: true })) === null).should.be.true();
   });
 
   it('reuses the compiled regex while the filter is unchanged', () => {
@@ -138,26 +138,29 @@ describe('ui filters', () => {
   });
 
   it('filters by selected source', () => {
-    filters.matchesSource('a.log', state({ selectedSource: 'a.log' })).should.be.true;
-    filters.matchesSource('b.log', state({ selectedSource: 'a.log' })).should.be.false;
-    filters.matchesSource('b.log', base).should.be.true;
+    filters.matchesSource('a.log', state({ selectedSource: 'a.log' })).should.be.true();
+    filters.matchesSource('b.log', state({ selectedSource: 'a.log' })).should.be.false();
+    filters.matchesSource('b.log', base).should.be.true();
   });
 
   it('level chips hide classified lines only', () => {
     const noWarn = state({ levelFilters: { ...base.levelFilters, warn: false } });
 
-    filters.matchesLevel('disk WARNING 91%', noWarn).should.be.false;
-    filters.matchesLevel('ERROR boom', noWarn).should.be.true;
-    filters.matchesLevel('GET /index.html 200', noWarn).should.be.true; // no level: never hidden
+    filters.matchesLevel('disk WARNING 91%', noWarn).should.be.false();
+    filters.matchesLevel('ERROR boom', noWarn).should.be.true();
+    // An unclassified line cannot satisfy any chip, so it is visible only
+    // while every chip is on.
+    filters.matchesLevel('GET /index.html 200', noWarn).should.be.false();
+    filters.matchesLevel('GET /index.html 200', base).should.be.true();
   });
 
   it('combines text, source and level (all must match)', () => {
     const s = state({ filterValue: 'disk', selectedSource: 'a.log', levelFilters: { ...base.levelFilters, info: false } });
 
-    filters.isVisible('disk ERROR', 'a.log', s).should.be.true;
-    filters.isVisible('disk ERROR', 'b.log', s).should.be.false;
-    filters.isVisible('disk INFO ok', 'a.log', s).should.be.false;
-    filters.isVisible('cpu ERROR', 'a.log', s).should.be.false;
+    filters.isVisible('disk ERROR', 'a.log', s).should.be.true();
+    filters.isVisible('disk ERROR', 'b.log', s).should.be.false();
+    filters.isVisible('disk INFO ok', 'a.log', s).should.be.false();
+    filters.isVisible('cpu ERROR', 'a.log', s).should.be.false();
   });
 
   it('highlights matches in html without touching tags', () => {

@@ -69,7 +69,7 @@ describe('tail', () => {
 
       const tailer = makeTail(info.path);
       setTimeout(() => {
-        tailer.getBuffer().should.be.empty;
+        tailer.getBuffer().should.be.empty();
         done();
       }, SPAWN_DELAY);
     });

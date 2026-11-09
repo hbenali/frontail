@@ -87,8 +87,8 @@ describe('frontail (start / resolveSettings)', function frontail() {
 
       settings.files.should.equal('/a.log /b.log');
       settings.filesNamespace.should.match(/^[0-9a-f]{32}$/);
-      settings.doAuthorization.should.be.true;
-      settings.doSecure.should.be.false;
+      settings.doAuthorization.should.be.true();
+      settings.doSecure.should.be.false();
       settings.urlPath.should.equal('/logs');
       settings.credentials.user.should.equal('u');
     });
@@ -165,7 +165,7 @@ describe('frontail (start / resolveSettings)', function frontail() {
 
       const wrong = await post(base, '/login', { username: 'user', password: 'nope' });
       wrong.status.should.equal(401);
-      (wrong.headers['set-cookie'] === undefined).should.be.true;
+      (wrong.headers['set-cookie'] === undefined).should.be.true();
 
       const ok = await post(base, '/login', { username: 'user', password: 'pass' });
       ok.status.should.equal(303);
@@ -206,7 +206,7 @@ describe('frontail (start / resolveSettings)', function frontail() {
 
       await new Promise((resolve) => app.close(resolve));
 
-      app.server.listening.should.be.false;
+      app.server.listening.should.be.false();
     });
 
     it('fails clearly on a missing preset file', () => {

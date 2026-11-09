@@ -35,7 +35,7 @@ describe('container log streaming', () => {
 
     tailer.on('line', (line) => {
       line.should.eql({ t: 'test log', s: 'test-container' });
-      spawnStub.calledWith('docker', ['logs', '-f', '--tail', 10, 'test-container']).should.be.true;
+      spawnStub.calledWith('docker', ['logs', '-f', '--tail', 10, 'test-container']).should.be.true();
       done();
     });
 
@@ -68,8 +68,8 @@ describe('container log streaming', () => {
     tailer.on('line', (line) => {
       lines.push(line);
       if (lines.length === 2) {
-        spawnStub.calledWith('podman', ['logs', '-f', '--tail', 5, 'c1']).should.be.true;
-        spawnStub.calledWith('podman', ['logs', '-f', '--tail', 5, 'c2']).should.be.true;
+        spawnStub.calledWith('podman', ['logs', '-f', '--tail', 5, 'c1']).should.be.true();
+        spawnStub.calledWith('podman', ['logs', '-f', '--tail', 5, 'c2']).should.be.true();
         lines.should.containEql({ t: 'log from c1', s: 'c1' });
         lines.should.containEql({ t: 'log from c2', s: 'c2' });
         done();
@@ -121,7 +121,7 @@ describe('container log streaming', () => {
 
     tailer.close();
 
-    cpMock.kill.calledOnce.should.be.true;
+    cpMock.kill.calledOnce.should.be.true();
   });
 
   it('should call onEnd after readFromStart finishes', (done) => {
