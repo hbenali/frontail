@@ -506,8 +506,17 @@ function _showToast(msg, duration) {
     if (_elFabScroll) _elFabScroll.classList.toggle('visible', !_isAtBottom);
   }
 
-  function _scrollToBottom() {
-    if (_elLogViewport) _elLogViewport.scrollTop = _elLogViewport.scrollHeight;
+  function _scrollToBottom(opts) {
+    if (!_elLogViewport) return;
+    _elLogViewport.scrollTop = _elLogViewport.scrollHeight;
+    // An explicit request to see the tail (FAB, Shift+G) is a reader saying
+    // "I am back": the automatic pause drops and the lines it held back are
+    // poured in. Setting scrollTop alone would not, since the scroll event
+    // handler bails out while a replay is running.
+    if (opts && opts.resume && _autoPaused) {
+      _autoPaused = false;
+      _flushLiveBuffer();
+    }
   }
 
   function _updateFab() {
@@ -1858,6 +1867,16 @@ function _showToast(msg, duration) {
         _olderLines.length = 0;
         _logFlushScheduled = false;
         _clearLogView();
+        // A fresh read repaints the panel from the server, so the two pauses
+        // that hold lines back must go with it. Automatic pause follows the
+        // scroll position and cannot clear itself while a replay is running
+        // (the scroll handler returns early on _replayingLog); the manual pause
+        // drops every incoming line and only counted it as skipped. Either one
+        // left set paints an empty panel over a live stream, which is exactly
+        // what "Start" and "Start X" used to do for a reader who had scrolled
+        // up or pressed Pause.
+        _autoPaused = false;
+        if (_isPaused) _setPauseState(false);
         _replayingLog = true;
         payload.seq = _readSeq;
         _socket.emit('read-from-start', payload);
@@ -2081,7 +2100,7 @@ function _showToast(msg, duration) {
       // FAB
       if (_elFabScroll) {
         _elFabScroll.addEventListener('click', function() {
-          _scrollToBottom();
+          _scrollToBottom({ resume: true });
           _fabNewLines = 0;
           _updateFab();
         });
@@ -2152,7 +2171,7 @@ function _showToast(msg, duration) {
           _filterAllLogs();
         }
         if (e.key === 'G' && e.shiftKey && !inInput) {
-          _scrollToBottom();
+          _scrollToBottom({ resume: true });
         }
       });
 
