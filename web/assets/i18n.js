@@ -141,6 +141,7 @@
 
       'ui.sourceChip.all': 'Все',
       'ui.topbar.allSources': 'Все источники',
+      'ui.topbar.skipped': 'пропущено',
 
       'ui.modal.setX.title': 'Задать количество строк для «Старт X»',
       'ui.modal.setX.hint': 'Допустимый диапазон: 1–1000000',
@@ -244,6 +245,7 @@
       'ui.controls.downloadFilteredLabel': 'Filtered',
 
       'ui.theme.dark': 'Dark',
+      'ui.theme.light': 'Light',
       'ui.theme.solar': 'Solar',
       'ui.status.connected': 'Connected',
       'ui.status.disconnected': 'Disconnected',
@@ -319,6 +321,7 @@
 
       'ui.sourceChip.all': 'All',
       'ui.topbar.allSources': 'All sources',
+      'ui.topbar.skipped': 'skipped',
 
       'ui.modal.setX.title': 'Set lines for "Start X"',
       'ui.modal.setX.hint': 'Allowed range: 1–1000000',
