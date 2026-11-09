@@ -146,6 +146,21 @@ describe('socket.io authorization', function socketAuth() {
     (failed.res.headers['set-cookie'] === undefined).should.be.true();
   });
 
+  // The redirect that sends an unauthenticated visitor here carries the
+  // destination in the query; the page has to put it back into the language
+  // link, otherwise switching the language drops it.
+  it('keeps the destination in the language link of the sign-in page', async () => {
+    const { body } = await getRequest('/login?lang=ru&next=%2Flogs%2Fa.log%3Ftail%3D50');
+
+    body.should.containEql('?lang=en&amp;next=%2Flogs%2Fa.log%3Ftail%3D50');
+  });
+
+  it('links the language switch plainly when there is no destination', async () => {
+    const { body } = await getRequest('/login?lang=ru');
+
+    body.should.containEql('<a href="?lang=en">');
+  });
+
   it('rejects a connection with a forged cookie', async () => {
     (await connect('connect.sid=s%3Aforged.sig')).should.equal(
       'Invalid cookie'
