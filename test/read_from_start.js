@@ -108,6 +108,28 @@ describe('read-from-start', function readFromStart() {
     socket.close();
   });
 
+  // The page hides rows whose source does not match the selected chip, so a
+  // batch without a name arrives and is filtered away: the pane looked empty
+  // after "Start" on a single file.
+  it('names the source on every batch it sends', async () => {
+    const socket = await connect();
+    const names = new Set();
+    let lines = 0;
+
+    socket.on('bulk-lines', (payload) => {
+      names.add(payload && payload.s);
+      lines += (payload && payload.lines ? payload.lines.length : 0);
+    });
+
+    const ended = new Promise((resolve) => socket.on('read-end', resolve));
+    socket.emit('read-from-start', { fileIndex: 0, lines: 100 });
+    await ended;
+
+    lines.should.equal(100);
+    [...names].should.deepEqual([path.join(dir, 'big.log')]);
+    socket.close();
+  });
+
   it('lets a new request replace an in-flight one: one read-end, the full file at the end', async () => {
     const socket = await connect();
     let lines = 0;
