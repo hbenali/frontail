@@ -1811,12 +1811,10 @@ function _showToast(msg, duration) {
       if (_elModalLoadAnyway) {
         _elModalLoadAnyway.addEventListener('click', function() {
           _closeModal();
-          _readSeq++;
-          _pendingLogLines.length = 0;
-          _liveBuffer.length = 0;
-          _logFlushScheduled = false;
-          _replayingLog = true;
-          _socket.emit('read-from-start', { fileIndex: _readSourceIndex(), force: true, full: true, seq: _readSeq });
+          // Goes through the shared read path: a full read of a big file is
+          // exactly the case where the panel used to stay empty, because the
+          // old code here skipped the pause reset and the view clear.
+          _startRead({ fileIndex: _readSourceIndex(), force: true, full: true });
           _showToast(_t('ui.toast.loadingFull'));
         });
       }
@@ -1893,26 +1891,26 @@ function _showToast(msg, duration) {
         // froze the tab on big logs. "Start X" below stays the bounded tail.
         _elReadFromStartBtn.addEventListener('click', function() {
           var budget = _refreshLineLimit();
-      if (_selectedSource) {
-        _requestRead({
-          fileIndex: _readSourceIndex(),
-          lines: budget
-        });
-      } else {
-        // "All sources": pull the tail of every file that is switched on, with
-        // one shared budget, instead of streaming one huge file in full. If
-        // every file is ticked off there is nothing to join: say so instead of
-        // sending an empty list the server would answer with source 0.
-        var _wanted = _visibleSourceIndexes();
-        if (!_wanted.length) {
-          _showToast(_t('ui.toast.noSourcesSelected'));
-          return;
-        }
-        _requestRead({
-          indexes: _wanted,
-          lines: budget
-        });
-      }
+          if (_selectedSource) {
+            _requestRead({
+              fileIndex: _readSourceIndex(),
+              lines: budget
+            });
+          } else {
+            // "All sources": pull the tail of every file that is switched on, with
+            // one shared budget, instead of streaming one huge file in full. If
+            // every file is ticked off there is nothing to join: say so instead of
+            // sending an empty list the server would answer with source 0.
+            var _wanted = _visibleSourceIndexes();
+            if (!_wanted.length) {
+              _showToast(_t('ui.toast.noSourcesSelected'));
+              return;
+            }
+            _requestRead({
+              indexes: _wanted,
+              lines: budget
+            });
+          }
           _showToast(_isContainer
             ? _t('ui.toast.requestingLogs')
             : _t('ui.toast.loadingFull'));
