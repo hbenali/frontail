@@ -39,6 +39,7 @@ describe('read-from-start', function readFromStart() {
   // being parsed in one go, and must yield exactly the same rows.
   const STREAM_PADDING = 4 * 1024 * 1024;
   let streamedLog;
+  let hugeLog;
 
   before(async () => {
     dir = fs.mkdtempSync(path.join(os.tmpdir(), 'frontail-rfs-'));
@@ -47,6 +48,10 @@ describe('read-from-start', function readFromStart() {
       log,
       Array.from({ length: LINES }, (_, i) => `line ${i}`).join('\n') + '\n'
     );
+    // Above the 50 MB warning: only its size may be announced before a read.
+    hugeLog = path.join(dir, 'huge.log');
+    fs.writeFileSync(hugeLog, NL + 'huge' + NL);
+    fs.truncateSync(hugeLog, 51 * 1024 * 1024);
     streamedLog = path.join(dir, 'streamed.log');
     const padding = Array.from({ length: 40000 }, (_, i) => `pad ${i} ${'x'.repeat(100)}`);
     fs.writeFileSync(streamedLog, ['first', ...padding, 'last'].join(NL) + NL, 'utf8');
@@ -55,7 +60,7 @@ describe('read-from-start', function readFromStart() {
     base = `http://localhost:${port}`;
     proc = spawn(
       process.execPath,
-      [path.join(__dirname, '..', 'bin', 'frontail'), '-p', port, '-n', '0', log],
+      [path.join(__dirname, '..', 'bin', 'frontail'), '-p', port, '-n', '0', log, hugeLog],
       { stdio: 'ignore' }
     );
     ns = (await getPage(50)).match(/[0-9a-f]{32}/)[0];
@@ -87,6 +92,51 @@ describe('read-from-start', function readFromStart() {
     await ended;
 
     lines.should.equal(LINES);
+    socket.close();
+  });
+
+  // The page always sends a line budget, so the size warning used to be
+  // computed away and never reached anyone. A bounded read of a huge file is
+  // still cheap, so it goes ahead and only reports the size.
+  it('reports the size of a huge file on a bounded read', async () => {
+    const socket = await connect();
+    let info;
+    let lines = 0;
+
+    socket.on('file-start-info', (payload) => {
+      if (payload && payload.size > 0) info = payload;
+    });
+    socket.on('bulk-lines', (payload) => {
+      lines += (payload && payload.lines ? payload.lines.length : 0);
+    });
+
+    const ended = new Promise((resolve) => socket.on('read-end', resolve));
+    socket.emit('read-from-start', { fileIndex: 0, lines: 100 });
+    await ended;
+
+    info.tooLarge.should.be.false();
+    info.size.should.equal(fs.statSync(path.join(dir, 'big.log')).size);
+    lines.should.equal(100);
+    socket.close();
+  });
+
+  it('asks before reading a huge file whole', async () => {
+    const socket = await connect();
+    let info;
+    let lines = 0;
+
+    socket.on('file-start-info', (payload) => {
+      if (payload && payload.size > 0) info = payload;
+    });
+    socket.on('bulk-lines', (payload) => {
+      lines += (payload && payload.lines ? payload.lines.length : 0);
+    });
+
+    socket.emit('read-from-start', { fileIndex: 1, full: true });
+    await new Promise((resolve) => setTimeout(resolve, 300));
+
+    info.tooLarge.should.be.true();
+    lines.should.equal(0);
     socket.close();
   });
 
