@@ -30,7 +30,7 @@
   --log-selected:   rgba(79,142,247,0.12);
   --log-selected-border: rgba(79,142,247,0.5);
 
-  --sidebar-width: 240px;
+  --sidebar-width: 290px;
 }
 
 [data-theme="light"] {
@@ -131,6 +131,55 @@ body {
   pointer-events: none;
 }
 
+/* ── Sidebar resizer ─────────────────────────────────────────── */
+.sidebar-resizer {
+  flex: 0 0 auto;
+  width: 7px;
+  margin-left: -3px;
+  position: relative;
+  z-index: 11;
+  cursor: col-resize;
+  background: transparent;
+}
+
+.sidebar-resizer::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 3px;
+  width: 1px;
+  background: var(--border);
+  transition: background 0.15s ease, width 0.15s ease;
+}
+
+.sidebar-resizer:hover::after,
+.sidebar-resizer.dragging::after {
+  width: 3px;
+  left: 2px;
+  background: var(--accent);
+}
+
+.sidebar-resizer:focus-visible::after {
+  width: 3px;
+  left: 2px;
+  background: var(--accent);
+}
+
+.sidebar.collapsed ~ .sidebar-resizer {
+  display: none;
+}
+
+/* No width animation while dragging, otherwise the handle lags the pointer. */
+#app.resizing .sidebar {
+  transition: none;
+}
+
+#app.resizing {
+  cursor: col-resize;
+  user-select: none;
+}
+
 .sidebar-header {
   display: flex;
   align-items: center;
@@ -198,6 +247,39 @@ body {
   margin-bottom: 8px;
 }
 
+.section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.section-head .section-label {
+  margin-bottom: 0;
+}
+
+.section-toggle {
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 5px;
+  color: var(--text-muted);
+  transition: background 0.15s, color 0.15s;
+  flex-shrink: 0;
+}
+
+.section-toggle:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.section-toggle[aria-pressed="true"] {
+  color: var(--accent);
+}
+
 /* ── File chip ───────────────────────────────────────────────── */
 .file-chip {
   display: flex;
@@ -225,10 +307,26 @@ body {
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
+  max-height: 300px;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .source-list.has-pills .file-chip {
   display: none;
+}
+
+/* One source per row instead of the wrapped chip grid. */
+.source-list.is-stack {
+  flex-direction: column;
+  flex-wrap: nowrap;
+  align-items: stretch;
+}
+
+.source-list.is-stack .source-chip,
+.source-list.is-stack .file-chip {
+  width: 100%;
+  justify-content: flex-start;
 }
 
 .source-chip {
@@ -422,6 +520,9 @@ body {
 
 .level-chip.active { opacity: 1 }
 
+.level-chip[data-level="all"].active {
+  border-color: var(--border-strong); color: var(--text-primary); background: var(--bg-raised);
+}
 .level-chip[data-level="error"].active {
   border-color: var(--error-color); color: var(--error-color); background: rgba(247,112,112,0.1);
 }
@@ -519,8 +620,20 @@ body {
   font-size: 12px;
   color: var(--text-secondary);
   transition: background 0.15s, border-color 0.15s, color 0.15s;
+  justify-content: flex-start;
+  min-width: 0;
+  overflow: hidden;
   white-space: nowrap;
 }
+
+/* Grid cells share one width; the label is what gives way on long RU text. */
+.ctrl-btn > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ctrl-btn > svg { flex: 0 0 auto; }
 
 .ctrl-btn:hover {
   background: var(--bg-hover);
@@ -652,6 +765,12 @@ body {
 .expand-sidebar-btn:hover {
   background: var(--bg-hover);
   color: var(--text-primary);
+}
+
+/* Beats the mobile `display: flex !important` below: the hamburger must be
+   gone while the sidebar is open. */
+.expand-sidebar-btn.hidden {
+  display: none !important;
 }
 
 .topbar-brand {
@@ -803,7 +922,8 @@ body {
 
 .log-pre.wrap {
   white-space: pre-wrap;
-  word-break: break-all;
+  overflow-wrap: anywhere;
+  word-break: normal;
 }
 
 /* ── Log lines ───────────────────────────────────────────────── */
@@ -813,9 +933,10 @@ body {
   padding: 0 16px;
   min-height: 20px;
   border-left: 2px solid transparent;
-  transition: background 0.1s;
   position: relative;
 }
+
+
 
 .log-line:hover { background: var(--log-line-hover) }
 
@@ -1004,7 +1125,8 @@ body {
   color: var(--text-primary);
   box-shadow: 0 4px 20px rgba(0,0,0,0.3);
   animation: toastin 0.2s ease;
-  pointer-events: none;
+  pointer-events: auto;
+  cursor: pointer;
 }
 
 @keyframes toastin {
@@ -1067,6 +1189,9 @@ body {
 /* ── Responsive / Mobile ─────────────────────────────────────── */
 @media (max-width: 640px) {
   :root { --sidebar-width: 100vw }
+
+  /* The sidebar is a full-screen sheet here, so resizing makes no sense. */
+  .sidebar-resizer { display: none; }
 
   /* The whole layout stacks: sidebar slides in as a full-screen sheet,
      main area is always full width underneath the fixed topbar.        */
@@ -1281,7 +1406,312 @@ body {
 }
 .modal-btn-primary:hover { opacity: 0.88 }
 
-/* ── Copyright footer ────────────────────────────────────────── */
+  .modal-wide {
+    max-width: 560px;
+  }
+
+  .settings-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-top: 4px;
+    margin-bottom: 4px;
+  }
+
+  .setting-row {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .setting-row label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-secondary);
+  }
+
+  .setting-row input[type="number"],
+  .setting-row select {
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--bg-raised);
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: 13px;
+    width: 100%;
+  }
+
+  .setting-row input[type="number"]:focus,
+  .setting-row select:focus {
+    border-color: var(--accent);
+    outline: none;
+  }
+
+  .setting-hint {
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+
+  /* ── Log directories tree ───────────────────────────────────────── */
+  .log-dir-toggle {
+  flex: 0 0 auto;
+  background: none;
+  border: 0;
+  padding: 0 4px 0 0;
+  margin: 0;
+  cursor: pointer;
+  color: var(--fg-muted);
+  font-size: 10px;
+  line-height: 1;
+  transition: transform .15s ease;
+}
+
+.log-dir-toggle.collapsed {
+  transform: rotate(-90deg);
+}
+
+.log-dir-file {
+  padding-left: 18px;
+}
+
+/* Folders and files in "Connected directories" get a glyph so the
+   indentation alone does not have to carry the hierarchy. */
+.log-dir-icon,
+.log-file-icon {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+  color: var(--text-muted);
+  margin-right: 4px;
+}
+
+.log-dir-icon { color: var(--accent); opacity: 0.85 }
+
+.log-dir-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+.log-dir-head .log-dir-check { margin-left: auto; }
+.log-dir-title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.log-dir-count {
+  flex: 0 0 auto;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+.log-dir-file .log-file-check {
+  margin-left: 0;
+  margin-right: 4px;
+  flex: 0 0 auto;
+}
+.log-dir-file.is-off { opacity: 0.45; }
+.log-dir-file.is-off .log-file-name { text-decoration: line-through; }
+.log-dir-file .log-file-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.source-empty-hint {
+  padding: 10px 8px;
+  color: var(--text-muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.source-dir-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+}
+
+.source-dir-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 4px 8px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 11px;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  cursor: pointer;
+  text-align: left;
+}
+
+.source-dir-head:hover {
+  background: var(--bg-raised);
+  color: var(--text-primary);
+}
+
+.source-dir-icon { flex: 0 0 auto; opacity: .9; }
+
+.source-dir-chevron { flex: 0 0 auto; transition: transform .15s ease; }
+.source-dir-group.collapsed .source-dir-chevron { transform: rotate(-90deg); }
+
+.source-dir-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.source-dir-count { margin-left: auto; font-variant-numeric: tabular-nums; }
+.source-dir-count-on { color: var(--success-color, #3fb950); }
+.source-dir-count-total { color: var(--text-muted); }
+
+.source-dir-group .source-chip { margin-left: 10px; }
+.source-dir-group.collapsed .source-chip { display: none; }
+
+.setting-row-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .setting-row-head .setting-row-label { margin: 0; }
+
+  /* The listing is a snapshot, so re-reading it is a deliberate action and
+     the button reports it: disabled while the walk is running. */
+  .log-dirs-refresh {
+    flex: 0 0 auto;
+    font-size: 12px;
+    padding: 2px 10px;
+  }
+
+  .log-dirs-refresh[disabled] {
+    opacity: 0.5;
+    cursor: default;
+  }
+
+  .log-dirs-tree {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-height: 42vh;
+    overflow-y: auto;
+    /* Keep the checkboxes clear of the scrollbar: gutter reserves the track,
+       the padding keeps a little breathing room next to it. */
+    scrollbar-gutter: stable;
+    padding-right: 12px;
+  }
+
+  .log-dirs-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding-left: 8px;
+    border-left: 2px solid var(--border);
+  }
+
+  .log-dirs-group-header {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .log-dirs-group-header .dir-count {
+    font-weight: 400;
+    color: var(--text-muted);
+    font-size: 11px;
+  }
+
+  .log-dir-file {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--text-primary);
+    cursor: pointer;
+    padding: 4px 10px 4px 18px;
+    border-radius: 4px;
+    transition: background 0.15s;
+  }
+
+  .log-dir-file:hover {
+    background: var(--bg-hover);
+  }
+
+  .log-dir-file input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--accent);
+    flex-shrink: 0;
+  }
+
+  .log-dir-file .file-path {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text-muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .log-dirs-empty {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-style: italic;
+    padding: 8px;
+  }
+
+  .modal-input {
+    margin: 8px 0 4px;
+  }
+
+  .modal-input input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--bg-raised);
+    color: var(--text-primary);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+  }
+
+  .modal-input input:focus {
+    border-color: var(--accent);
+    outline: none;
+  }
+
+  .settings-btn {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 7px;
+    color: var(--text-muted);
+    background: transparent;
+    border: 1px solid transparent;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+  }
+
+  .settings-btn:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+    border-color: var(--border);
+  }
+
+  /* ── Copyright footer ────────────────────────────────────────── */
 .sidebar-copyright {
   padding: 8px 14px;
   border-top: 1px solid var(--border);

@@ -11,7 +11,7 @@ describe('read limiter', () => {
 
     a.should.be.a.Function;
     b.should.be.a.Function;
-    (limiter.acquire() === null).should.be.true;
+    (limiter.acquire() === null).should.be.true();
     limiter.active.should.equal(2);
   });
 

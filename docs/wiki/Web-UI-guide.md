@@ -26,6 +26,18 @@ A sidebar (sources, live stats, filter, saved filters, highlights, controls, the
 
 Click a source pill to isolate it; **All** shows everything. Per source you can **Start** (load its full history) and **Download** it.
 
+When sources come from connected directories (`-D, --dir`), the sidebar groups them into folders. A folder header shows a chevron and an `enabled/total` counter; collapsing it is remembered in `localStorage`.
+
+## Reading history
+
+- **Start** loads the selected source from the beginning, capped by the browser buffer (`--lines`).
+- **Start X** loads only the last X lines (1000 by default) — much quicker on a multi-gigabyte file.
+- **Set X** changes X from a dialog.
+
+Only one read runs at a time. Pressing one of these buttons while another read is still streaming cancels that read, clears the view and starts the new one, so the two never fight over the same pane.
+
+Lines arrive in batches and are colorized only when they scroll into view, so a few thousand lines appear at once instead of freezing the tab.
+
 ## Controls
 
 | Control | What it does |
@@ -36,10 +48,20 @@ Click a source pill to isolate it; **All** shows everything. Per source you can 
 | Time | Per-line timestamp |
 | Colors | Log colorizing on/off |
 | Start | Load the selected source from the beginning |
+| Start X | Load only the last X lines (default 1000) |
+| Set X | Change X for **Start X** |
 | Download | Full file / container / journal log; **Sanitized** strips ANSI codes |
 | Filtered | Download exactly the lines currently visible (done in the browser) |
 
 Live stats show total, visible, error and warning counts. The favicon shows the unread count while the tab is in the background. If the server is redeployed while a tab is open, a banner asks you to refresh.
+
+## Settings
+
+The gear icon next to the **LIVE** badge opens the settings dialog: the default X for **Start X** and the interface language. The language follows the browser unless you pin it (`ru` picks Russian). The same dialog lists the connected log directories, where each file can be enabled or disabled — a disabled file disappears from the sidebar until it is turned back on.
+
+## Sign-in
+
+When credentials are configured, frontail serves its own sign-in page instead of the browser's HTTP Basic Auth dialog. The session is a signed cookie; `/logout` drops it. Sessions live in memory, so restarting the server signs everyone out.
 
 ## Themes and persistence
 

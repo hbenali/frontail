@@ -24,9 +24,12 @@ describe('tail', () => {
   // Close every tailer a test creates so child processes and `process` exit
   // listeners don't pile up across tests.
   const opened = [];
+  // A bare tailer follows nothing until start(); most tests here are about
+  // the streaming behaviour, so they opt into following explicitly.
   const makeTail = (...args) => {
     const t = tail(...args);
     opened.push(t);
+    t.start();
     return t;
   };
 
@@ -69,7 +72,7 @@ describe('tail', () => {
 
       const tailer = makeTail(info.path);
       setTimeout(() => {
-        tailer.getBuffer().should.be.empty;
+        tailer.getBuffer().should.be.empty();
         done();
       }, SPAWN_DELAY);
     });
@@ -82,6 +85,24 @@ describe('tail', () => {
     process.listenerCount('exit').should.equal(before + 1);
     tailer.close();
     process.listenerCount('exit').should.equal(before);
+  });
+
+  it('readFromStart with maxLines streams only the tail', (done) => {
+    temp.open(TEMP_FILE_PROFIX, (err, info) => {
+      writeLines(info.fd, 5);
+      const tailer = makeTail(info.path, { buffer: 0 });
+      const lines = [];
+
+      tailer.readFromStart(
+        0,
+        (line) => lines.push(line.t),
+        () => {
+          lines.should.eql(['line3', 'line4']);
+          done();
+        },
+        2
+      );
+    });
   });
 
   it('readFromStart streams the whole file then ends', (done) => {

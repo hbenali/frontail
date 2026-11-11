@@ -24,6 +24,7 @@ Any option can also be set in a [configuration file](Configuration-file). Comman
 | Option | Description |
 | --- | --- |
 | `[file ...]` | Files to tail; shell globs work. `-` reads stdin |
+| `-D, --dir <path>` | Mount a directory of logs; every log file inside it becomes a source, grouped under the directory in the sidebar (repeatable) |
 | `-C, --container <container>` | Docker/Podman container name or id (repeatable) |
 | `--container-engine <engine>` | `docker` (default) or `podman` |
 | `--journal` | Follow the systemd journal |

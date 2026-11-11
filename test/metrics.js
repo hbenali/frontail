@@ -27,7 +27,7 @@ describe('metrics', () => {
     text.should.containEql('frontail_lines_total{source="web"} 1');
     text.should.containEql('frontail_tail_errors_total 1');
     text.should.match(/frontail_uptime_seconds \d+\n/);
-    text.endsWith('\n').should.be.true;
+    text.endsWith('\n').should.be.true();
   });
 
   it('escapes label values', () => {

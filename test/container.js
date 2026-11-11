@@ -6,6 +6,16 @@ const { PassThrough } = require('stream');
 const EventEmitter = require('events');
 const tail = require('../lib/tail');
 
+// Following is lazy: a tailer spawns nothing until start(). These tests are
+// about container streaming, so they start the tailer right after creating it.
+const openTails = [];
+const makeTail = (...args) => {
+  const t = tail(...args);
+  openTails.push(t);
+  t.start();
+  return t;
+};
+
 describe('container log streaming', () => {
   let spawnStub;
 
@@ -27,7 +37,7 @@ describe('container log streaming', () => {
 
     spawnStub.returns(cpMock);
 
-    const tailer = tail([], {
+    const tailer = makeTail([], {
       container: ['test-container'],
       containerEngine: 'docker',
       buffer: 10
@@ -35,7 +45,7 @@ describe('container log streaming', () => {
 
     tailer.on('line', (line) => {
       line.should.eql({ t: 'test log', s: 'test-container' });
-      spawnStub.calledWith('docker', ['logs', '-f', '--tail', 10, 'test-container']).should.be.true;
+      spawnStub.calledWith('docker', ['logs', '-f', '--tail', 10, 'test-container']).should.be.true();
       done();
     });
 
@@ -58,7 +68,7 @@ describe('container log streaming', () => {
     spawnStub.withArgs('podman', ['logs', '-f', '--tail', 5, 'c1']).returns(cpMock1);
     spawnStub.withArgs('podman', ['logs', '-f', '--tail', 5, 'c2']).returns(cpMock2);
 
-    const tailer = tail([], {
+    const tailer = makeTail([], {
       container: ['c1', 'c2'],
       containerEngine: 'podman',
       buffer: 5
@@ -68,8 +78,8 @@ describe('container log streaming', () => {
     tailer.on('line', (line) => {
       lines.push(line);
       if (lines.length === 2) {
-        spawnStub.calledWith('podman', ['logs', '-f', '--tail', 5, 'c1']).should.be.true;
-        spawnStub.calledWith('podman', ['logs', '-f', '--tail', 5, 'c2']).should.be.true;
+        spawnStub.calledWith('podman', ['logs', '-f', '--tail', 5, 'c1']).should.be.true();
+        spawnStub.calledWith('podman', ['logs', '-f', '--tail', 5, 'c2']).should.be.true();
         lines.should.containEql({ t: 'log from c1', s: 'c1' });
         lines.should.containEql({ t: 'log from c2', s: 'c2' });
         done();
@@ -90,7 +100,7 @@ describe('container log streaming', () => {
 
     spawnStub.returns(cpMock);
 
-    const tailer = tail([], {
+    const tailer = makeTail([], {
       container: ['bad-container'],
       containerEngine: 'docker',
       buffer: 10
@@ -113,7 +123,7 @@ describe('container log streaming', () => {
 
     spawnStub.returns(cpMock);
 
-    const tailer = tail([], {
+    const tailer = makeTail([], {
       container: ['test-container'],
       containerEngine: 'docker',
       buffer: 10
@@ -121,7 +131,7 @@ describe('container log streaming', () => {
 
     tailer.close();
 
-    cpMock.kill.calledOnce.should.be.true;
+    cpMock.kill.calledOnce.should.be.true();
   });
 
   it('should call onEnd after readFromStart finishes', (done) => {
@@ -139,7 +149,7 @@ describe('container log streaming', () => {
     spawnStub.withArgs('docker', ['logs', '-f', '--tail', 10, 'test-container']).returns(followCp);
     spawnStub.withArgs('docker', ['logs', 'test-container']).returns(readCp);
 
-    const tailer = tail([], {
+    const tailer = makeTail([], {
       container: ['test-container'],
       containerEngine: 'docker',
       buffer: 10
@@ -165,7 +175,7 @@ describe('container log streaming', () => {
     cpMock.kill = sinon.spy();
     spawnStub.returns(cpMock);
 
-    const tailer = tail([], {
+    const tailer = makeTail([], {
       container: ['web', 'db'],
       containerEngine: 'docker',
       buffer: 10
@@ -193,7 +203,7 @@ describe('container log streaming', () => {
     spawnStub.withArgs('docker', ['logs', '-f', '--tail', 10, 'myapp']).returns(containerCp);
     spawnStub.withArgs('tail', ['-n', 10, '-F', '/var/log/app.log']).returns(fileCp);
 
-    const tailer = tail(['/var/log/app.log'], {
+    const tailer = makeTail(['/var/log/app.log'], {
       container: ['myapp'],
       containerEngine: 'docker',
       buffer: 10
@@ -227,7 +237,7 @@ describe('container log streaming', () => {
 
     spawnStub.returns(cpMock);
 
-    const tailer = tail('/some/file.log', { buffer: 5 });
+    const tailer = makeTail('/some/file.log', { buffer: 5 });
 
     tailer.on('line', (line) => {
       line.should.have.property('t', 'test');

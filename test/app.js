@@ -48,7 +48,7 @@ describe('browser application', () => {
       '<div class="log"></div><button type="button" id="pauseBtn"></button>' +
       '<input type="test" id="filter"/></body>';
     const ansiup = fs.readFileSync('./web/assets/ansi_up.js', 'utf-8');
-    const scripts = ['util', 'settings', 'formats', 'filters', 'highlight'].map((name) =>
+    const scripts = ['util', 'settings', 'i18n', 'formats', 'filters', 'highlight'].map((name) =>
       fs.readFileSync(`./web/assets/${name}.js`, 'utf-8')
     );
     const src = fs.readFileSync('./web/assets/app.js', 'utf-8');
