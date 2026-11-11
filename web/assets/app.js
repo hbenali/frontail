@@ -2019,6 +2019,21 @@ function _showToast(msg, duration) {
         });
       }
 
+      var _elLogDirsRefresh = document.getElementById('logDirsRefresh');
+      if (_elLogDirsRefresh) {
+        _elLogDirsRefresh.addEventListener('click', function(ev) {
+          ev.preventDefault();
+          if (!_socket || !_socket.connected) {
+            _showToast(_t('ui.toast.logDirsRefreshFailed', { message: _t('ui.toast.disconnected') }));
+            return;
+          }
+          // Disabled until the server answers, so a slow walk cannot be
+          // requested twice by impatient clicking.
+          _elLogDirsRefresh.disabled = true;
+          _socket.emit('refresh-log-dirs');
+        });
+      }
+
       if (_elSettingsBtn) _elSettingsBtn.addEventListener('click', _openSettingsModal);
       if (_elSettingsCancel) _elSettingsCancel.addEventListener('click', _closeSettingsModal);
       if (_elSettingsReset) {
@@ -2210,6 +2225,17 @@ function _showToast(msg, duration) {
           // The sidebar selector is built from options:sources before the log
           // dirs arrive, so rebuild it once we know the folder layout.
           _buildSourceSelector(_sources);
+        })
+        .on('refresh-log-dirs-done', function(info) {
+          var refreshBtn = document.getElementById('logDirsRefresh');
+          if (refreshBtn) refreshBtn.disabled = false;
+          var found = info && typeof info.files === 'number' ? info.files : null;
+          _showToast(_t('ui.toast.logDirsRefreshed', { n: found === null ? '?' : found }));
+        })
+        .on('refresh-log-dirs-failed', function(err) {
+          var refreshBtn = document.getElementById('logDirsRefresh');
+          if (refreshBtn) refreshBtn.disabled = false;
+          _showToast(_t('ui.toast.logDirsRefreshFailed', { message: (err && err.message) || '?' }));
         })
         .on('options:hide-topbar', function() {
           if (_topbar) _topbar.classList.add('hide');

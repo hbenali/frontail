@@ -329,7 +329,10 @@
           <span class="setting-hint" data-i18n="ui.settings.bufferLimit.hint">Lines kept in the live view (100–1000000)</span>
         </div>
         <div class="setting-row">
-          <h3 class="setting-row-label" data-i18n="ui.settings.logDirsTitle">Connected directories</h3>
+          <div class="setting-row-head">
+            <h3 class="setting-row-label" data-i18n="ui.settings.logDirsTitle">Connected directories</h3>
+            <button type="button" class="modal-btn modal-btn-ghost log-dirs-refresh" id="logDirsRefresh" data-i18n="ui.settings.logDirsRefresh">Refresh</button>
+          </div>
           <div id="logDirsTree" class="log-dirs-tree"></div>
           <span class="setting-hint" data-i18n="ui.settings.logDirsHint">Files in these directories can be enabled or disabled. Disabled files do not appear in the sources list.</span>
         </div>

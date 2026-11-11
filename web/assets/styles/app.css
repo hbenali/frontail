@@ -1576,7 +1576,29 @@ body {
 .source-dir-group .source-chip { margin-left: 10px; }
 .source-dir-group.collapsed .source-chip { display: none; }
 
-.log-dirs-tree {
+.setting-row-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .setting-row-head .setting-row-label { margin: 0; }
+
+  /* The listing is a snapshot, so re-reading it is a deliberate action and
+     the button reports it: disabled while the walk is running. */
+  .log-dirs-refresh {
+    flex: 0 0 auto;
+    font-size: 12px;
+    padding: 2px 10px;
+  }
+
+  .log-dirs-refresh[disabled] {
+    opacity: 0.5;
+    cursor: default;
+  }
+
+  .log-dirs-tree {
     display: flex;
     flex-direction: column;
     gap: 12px;
