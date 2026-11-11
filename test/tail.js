@@ -24,9 +24,12 @@ describe('tail', () => {
   // Close every tailer a test creates so child processes and `process` exit
   // listeners don't pile up across tests.
   const opened = [];
+  // A bare tailer follows nothing until start(); most tests here are about
+  // the streaming behaviour, so they opt into following explicitly.
   const makeTail = (...args) => {
     const t = tail(...args);
     opened.push(t);
+    t.start();
     return t;
   };
 
