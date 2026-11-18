@@ -78,6 +78,27 @@ describe('tail', () => {
     });
   });
 
+  it('does not replay the buffer when following restarts', (done) => {
+    temp.open(TEMP_FILE_PROFIX, (err, info) => {
+      writeLines(info.fd, 3);
+
+      const tailer = makeTail(info.path, { buffer: 5 });
+      setTimeout(() => {
+        tailer.getBuffer().should.have.length(3);
+        tailer.stop();
+        tailer.start();
+        setTimeout(() => {
+          tailer.getBuffer().should.be.eql([
+            { t: 'line0', s: info.path },
+            { t: 'line1', s: info.path },
+            { t: 'line2', s: info.path }
+          ]);
+          done();
+        }, SPAWN_DELAY * 3);
+      }, SPAWN_DELAY * 3);
+    });
+  });
+
   it('removes its process exit listener on close', () => {
     const before = process.listenerCount('exit');
     const tailer = tail([]);
