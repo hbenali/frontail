@@ -38,8 +38,12 @@ describe('socket.io authorization', function socketAuth() {
   }
 
   // The sign-in form is the only way in: the browser dialog is gone.
-  function login(user, pass) {
-    const payload = new URLSearchParams({ username: user, password: pass, next: '' }).toString();
+  function login(user, pass, nextTarget) {
+    const payload = new URLSearchParams({
+      username: user,
+      password: pass,
+      next: nextTarget || '',
+    }).toString();
     return new Promise((resolve, reject) => {
       const req = http.request(
         `${base}/login`,
@@ -165,5 +169,24 @@ describe('socket.io authorization', function socketAuth() {
     (await connect('connect.sid=s%3Aforged.sig')).should.equal(
       'Invalid cookie'
     );
+  });
+
+  // A browser strips tabs and newlines from a Location before following it, so
+  // "/<TAB>/evil.com" would turn into "//evil.com" and leave the origin right
+  // after a successful sign-in.
+  it('refuses a destination that smuggles a protocol-relative URL', async () => {
+    const smuggled = await login('user', 'pass', '/\t/evil.com');
+    smuggled.res.statusCode.should.equal(303);
+    smuggled.res.headers.location.should.equal('/');
+
+    const newline = await login('user', 'pass', '/\n/evil.com');
+    newline.res.headers.location.should.equal('/');
+  });
+
+  it('still honours an ordinary root-relative destination', async () => {
+    const { res } = await login('user', 'pass', '/?f=app');
+
+    res.statusCode.should.equal(303);
+    res.headers.location.should.equal('/?f=app');
   });
 });
