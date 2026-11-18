@@ -130,7 +130,13 @@ describe('frontail (start / resolveSettings)', function frontail() {
       await new Promise((resolve) => socket.on('options:source-info', resolve));
       await new Promise((r) => setTimeout(r, 200));
       fs.appendFileSync(log, 'four\n');
-      await new Promise((r) => setTimeout(r, 700));
+      // `tail -F` falls back to a one-second poll where inotify is not
+      // available (an overlay filesystem inside a container), so wait for the
+      // line instead of trusting a fixed delay.
+      const deadline = Date.now() + 5000;
+      while (lines.length < 3 && Date.now() < deadline) {
+        await new Promise((r) => setTimeout(r, 50));
+      }
       socket.close();
 
       lines.should.eql(['two', 'three', 'four']); // -n 2, then the new line
