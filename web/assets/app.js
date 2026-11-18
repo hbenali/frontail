@@ -32,6 +32,10 @@ window.App = (function app(window, document) {
   // Rows the document is allowed to hold. Older rows live in _olderLines as
   // detached nodes: they cost no layout until the reader scrolls back to them.
   var DOM_LINE_LIMIT   = 100000;
+  // Scrolling back into the detached rows lifts both caps for a moment;
+  // without the slack a restored row would be trimmed away again at once.
+  var RESTORE_SLACK    = 2000;
+  var DOM_LINE_LIMIT_SOFT = DOM_LINE_LIMIT + RESTORE_SLACK;
   var _olderLines      = [];
   // The server announces its own --lines budget on connect. Remembering it
   // separately keeps that announcement from silently overriding the smaller
@@ -1385,8 +1389,12 @@ function _showToast(msg, duration) {
     // Right after rows were restored above the viewport the ceiling is lifted
     // for a moment, otherwise they are dropped again and the reader is yanked
     // back to the bottom.
-    var ceiling = Date.now() < _holdTrimUntil ? DOM_LINE_LIMIT_SOFT : DOM_LINE_LIMIT;
-    var keep = Math.min(ceiling, _linesLimit);
+    var holding = Date.now() < _holdTrimUntil;
+    // Both caps get the slack while the reader is browsing above the tail,
+    // otherwise a restored row is evicted again by the very next trim.
+    var ceiling = holding ? DOM_LINE_LIMIT_SOFT : DOM_LINE_LIMIT;
+    var budget = holding ? _linesLimit + RESTORE_SLACK : _linesLimit;
+    var keep = Math.min(ceiling, budget);
     while (_logContainer.children.length > keep) {
       var removed = _logContainer.children[0];
       _olderLines.push(_detachLine(removed));
@@ -1396,7 +1404,7 @@ function _showToast(msg, duration) {
     // Rows that no longer fit the row budget are dropped for good: keep the
     // newest _linesLimit rows across the window and the detached tail.
     while (_olderLines.length &&
-           (_olderLines.length + _logContainer.children.length) > _linesLimit) {
+           (_olderLines.length + _logContainer.children.length) > budget) {
       var dropped = _olderLines.shift();
       if (dropped.level === 'error' && _errorCount > 0) _errorCount--;
       if (dropped.level === 'warn'  && _warnCount  > 0) _warnCount--;
@@ -1420,13 +1428,15 @@ function _showToast(msg, duration) {
       _logContainer.insertBefore(el, _logContainer.firstChild);
       moved++;
     }
+    // Hold the trimmer off while the reader is up here: the rows just restored
+    // must survive the next append instead of bouncing straight back out.
+    if (moved) _holdTrimUntil = Date.now() + 5000;
     return moved;
   }
 
-  // While set, the window may grow past DOM_LINE_LIMIT instead of dropping rows
+  // While set, the window may grow past its budget instead of dropping rows
   // the reader has just scrolled back to.
   var _holdTrimUntil = 0;
-  var DOM_LINE_LIMIT_SOFT = 100000;
 
   var _pendingLogLines   = [];
   var _logFlushScheduled = false;
@@ -2163,7 +2173,13 @@ function _showToast(msg, duration) {
           // data. Pulling them back in here would fight the window trimmer, so
           // the restore waits until the replay is over.
           if (_replayingLog) return;
-          if (_elLogViewport.scrollTop < 300 && _olderLines.length) _restoreOlderLines(200);
+          // One step of scroll-back brings 200 rows in. If the browser does not
+          // re-anchor the offset, the reader is still above the fold, so step
+          // again - a few times at most, never the whole history.
+          var steps = 5;
+          while (steps-- > 0 && _elLogViewport.scrollTop < 300 && _olderLines.length) {
+            if (!_restoreOlderLines(200)) break;
+          }
           // Away from the tail the log pauses itself: appended lines would move
           // the rows the reader is looking at. Coming back to the bottom drops
           // the pause and pours the buffered lines in.
@@ -2172,6 +2188,9 @@ function _showToast(msg, duration) {
             _autoPaused = true;
           } else if (atBottomNow && _autoPaused) {
             _autoPaused = false;
+            // Back at the tail: the extra rows above are no longer needed, so
+            // the next trim may bring the window back to its budget.
+            _holdTrimUntil = 0;
             _flushLiveBuffer();
           }
           // Painting on every auto-scroll frame would repaint the tail over and
