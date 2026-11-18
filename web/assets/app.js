@@ -36,6 +36,10 @@ window.App = (function app(window, document) {
   // without the slack a restored row would be trimmed away again at once.
   var RESTORE_SLACK    = 2000;
   var DOM_LINE_LIMIT_SOFT = DOM_LINE_LIMIT + RESTORE_SLACK;
+  // How many rows the detached history may hold. Rows past the row budget are
+  // not thrown away: they wait here until the reader scrolls back to them, and
+  // only the history cap itself discards the oldest ones.
+  var HISTORY_ROWS     = 20000;
   var _olderLines      = [];
   // The server announces its own --lines budget on connect. Remembering it
   // separately keeps that announcement from silently overriding the smaller
@@ -1406,10 +1410,10 @@ function _showToast(msg, duration) {
       _logContainer.removeChild(removed);
       trimmed++;
     }
-    // Rows that no longer fit the row budget are dropped for good: keep the
-    // newest _linesLimit rows across the window and the detached tail.
-    while (_olderLines.length &&
-           (_olderLines.length + _logContainer.children.length) > budget) {
+    // The detached history is capped on its own. Comparing it against the row
+    // budget instead emptied it on every trim, so nothing was ever left to
+    // scroll back to and the restore above could not fire.
+    while (_olderLines.length > HISTORY_ROWS) {
       var dropped = _olderLines.shift();
       if (dropped.level === 'error' && _errorCount > 0) _errorCount--;
       if (dropped.level === 'warn'  && _warnCount  > 0) _warnCount--;
