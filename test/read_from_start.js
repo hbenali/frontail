@@ -258,4 +258,81 @@ describe('read-from-start', function readFromStart() {
       child.kill();
     }
   });
+
+  // The streamed path is the one that can run away: it used to be invisible to
+  // abort-read, so it kept reading and held a limiter slot until the file ran
+  // out. A file above the in-memory limit proves the stream stops on request
+  // and hands its slot back.
+  it('stops a streamed full read when the client aborts', async () => {
+    const { FULL_READ_IN_MEMORY_BYTES } = require('../lib/constants');
+    const BIG_LINES = 170000;
+    const bigLog = path.join(dir, 'streaming-big.log');
+    const rows = [];
+    for (let i = 0; i < BIG_LINES; i += 1) rows.push(`row ${i} ${'z'.repeat(100)}`);
+    fs.writeFileSync(bigLog, rows.join(NL) + NL);
+    fs.statSync(bigLog).size.should.be.above(FULL_READ_IN_MEMORY_BYTES);
+
+    const port = 20000 + Math.floor(Math.random() * 20000);
+    const bigBase = `http://localhost:${port}`;
+    const child = spawn(
+      process.execPath,
+      [path.join(__dirname, '..', 'bin', 'frontail'), '-p', port, '-n', '0', bigLog],
+      { stdio: 'ignore' }
+    );
+    try {
+      let body = '';
+      for (let i = 0; i < 50 && !body; i += 1) {
+        body = await new Promise((resolve) => {
+          http
+            .get(bigBase, (res) => {
+              let text = '';
+              res.on('data', (c) => {
+                text += c;
+              });
+              res.on('end', () => resolve(text));
+            })
+            .on('error', () => resolve(''));
+        });
+        if (!body) await new Promise((r) => setTimeout(r, 100));
+      }
+      const bigNs = body.match(/[0-9a-f]{32}/)[0];
+      const socket = await new Promise((resolve) => {
+        const s = io(`${bigBase}/${bigNs}`, {
+          transports: ['websocket'],
+          reconnection: false,
+        });
+        s.on('connect', () => resolve(s));
+      });
+
+      let lines = 0;
+      let firstChunk;
+      const started = new Promise((resolve) => {
+        socket.on('bulk-lines', (payload) => {
+          lines += payload && payload.lines ? payload.lines.length : 0;
+          if (!firstChunk) {
+            firstChunk = payload;
+            resolve();
+          }
+        });
+      });
+      socket.emit('read-from-start', { fileIndex: 0, force: true, full: true });
+      await started;
+
+      socket.emit('abort-read', { seq: 1 });
+      await new Promise((r) => setTimeout(r, 100));
+      const afterAbort = lines;
+      afterAbort.should.be.below(BIG_LINES);
+      await new Promise((r) => setTimeout(r, 400));
+      lines.should.equal(afterAbort);
+
+      // The limiter slot is back: a fresh full read starts and reaches the end.
+      const ended = new Promise((resolve) => socket.on('read-end', resolve));
+      socket.emit('read-from-start', { fileIndex: 0, force: true, full: true });
+      await ended;
+      lines.should.be.aboveOrEqual(BIG_LINES);
+      socket.close();
+    } finally {
+      child.kill();
+    }
+  });
 });
