@@ -1341,9 +1341,14 @@ function _showToast(msg, duration) {
     if (!(avg > 0)) avg = 22;
     var top = _elLogViewport.scrollTop;
     var height = _elLogViewport.clientHeight || 800;
-    var first = Math.max(0, Math.floor((top - 200) / avg));
-    var last = Math.min(rows.length - 1, Math.ceil((top + height + 200) / avg));
-    if (last - first > 60) last = Math.min(rows.length - 1, first + 60);
+    var margin = Math.max(200, Math.ceil(height / 2));
+    var first = Math.max(0, Math.floor((top - margin) / avg));
+    var last = Math.min(rows.length - 1, Math.ceil((top + height + margin) / avg));
+    // The cap follows the viewport instead of being a fixed sixty rows: a tall
+    // window shows more than that, and everything past the cap stayed plain
+    // until the reader scrolled. The ceiling still bounds a degenerate average.
+    var maxRows = Math.min(400, Math.max(60, Math.ceil((height + margin * 2) / avg) + 8));
+    if (last - first + 1 > maxRows) last = Math.min(rows.length - 1, first + maxRows - 1);
     var painted = 0;
     for (var i = first; i <= last; i++) {
       if (_paintLine(rows[i])) painted++;
