@@ -310,6 +310,44 @@ describe('daemonize', () => {
 
       daemon.daemon.lastCall.args[1].should.containDeep(['/path/to/file']);
     });
+
+    it('with directories and their limits', () => {
+      opts = optionsParser([
+        'node',
+        '/path/to/frontail',
+        '-D',
+        '/var/log',
+        '-D',
+        '/srv/log',
+        '--dir-max-depth',
+        '2',
+        '--dir-max-files',
+        '50',
+      ]);
+
+      daemonize('script', opts);
+
+      daemon.daemon.lastCall.args[1].should.containDeep([
+        '--dir',
+        '/var/log',
+        '--dir',
+        '/srv/log',
+        '--dir-max-depth',
+        2,
+        '--dir-max-files',
+        50,
+      ]);
+    });
+
+    it('passes the default directory limits on', () => {
+      opts = optionsParser(['node', '/path/to/frontail', '-D', '/var/log']);
+
+      daemonize('script', opts);
+
+      const args = daemon.daemon.lastCall.args[1];
+      args.should.containDeep(['--dir', '/var/log', '--dir-max-depth', 3]);
+      args.should.containDeep(['--dir-max-files', 200]);
+    });
   });
 
   it('should write pid to pidfile', () => {
