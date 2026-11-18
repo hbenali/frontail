@@ -45,7 +45,7 @@ describe('container log streaming', () => {
 
     tailer.on('line', (line) => {
       line.should.eql({ t: 'test log', s: 'test-container' });
-      spawnStub.calledWith('docker', ['logs', '-f', '--tail', 10, 'test-container']).should.be.true();
+      spawnStub.calledWith('docker', ['logs', '-f', '--tail', '10', 'test-container']).should.be.true();
       done();
     });
 
@@ -65,8 +65,8 @@ describe('container log streaming', () => {
     cpMock2.stderr = new PassThrough();
     cpMock2.kill = sinon.spy();
 
-    spawnStub.withArgs('podman', ['logs', '-f', '--tail', 5, 'c1']).returns(cpMock1);
-    spawnStub.withArgs('podman', ['logs', '-f', '--tail', 5, 'c2']).returns(cpMock2);
+    spawnStub.withArgs('podman', ['logs', '-f', '--tail', '5', 'c1']).returns(cpMock1);
+    spawnStub.withArgs('podman', ['logs', '-f', '--tail', '5', 'c2']).returns(cpMock2);
 
     const tailer = makeTail([], {
       container: ['c1', 'c2'],
@@ -78,8 +78,8 @@ describe('container log streaming', () => {
     tailer.on('line', (line) => {
       lines.push(line);
       if (lines.length === 2) {
-        spawnStub.calledWith('podman', ['logs', '-f', '--tail', 5, 'c1']).should.be.true();
-        spawnStub.calledWith('podman', ['logs', '-f', '--tail', 5, 'c2']).should.be.true();
+        spawnStub.calledWith('podman', ['logs', '-f', '--tail', '5', 'c1']).should.be.true();
+        spawnStub.calledWith('podman', ['logs', '-f', '--tail', '5', 'c2']).should.be.true();
         lines.should.containEql({ t: 'log from c1', s: 'c1' });
         lines.should.containEql({ t: 'log from c2', s: 'c2' });
         done();
@@ -146,7 +146,7 @@ describe('container log streaming', () => {
     readCp.stderr = new PassThrough();
     readCp.kill = sinon.spy();
 
-    spawnStub.withArgs('docker', ['logs', '-f', '--tail', 10, 'test-container']).returns(followCp);
+    spawnStub.withArgs('docker', ['logs', '-f', '--tail', '10', 'test-container']).returns(followCp);
     spawnStub.withArgs('docker', ['logs', 'test-container']).returns(readCp);
 
     const tailer = makeTail([], {
@@ -200,8 +200,8 @@ describe('container log streaming', () => {
     fileCp.stderr = new PassThrough();
     fileCp.kill = sinon.spy();
 
-    spawnStub.withArgs('docker', ['logs', '-f', '--tail', 10, 'myapp']).returns(containerCp);
-    spawnStub.withArgs('tail', ['-n', 10, '-F', '/var/log/app.log']).returns(fileCp);
+    spawnStub.withArgs('docker', ['logs', '-f', '--tail', '10', 'myapp']).returns(containerCp);
+    spawnStub.withArgs('tail', ['-n', '10', '-F', '/var/log/app.log']).returns(fileCp);
 
     const tailer = makeTail(['/var/log/app.log'], {
       container: ['myapp'],
