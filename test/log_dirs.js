@@ -7,6 +7,7 @@ const os = require('os');
 const path = require('path');
 const { execFileSync } = require('child_process');
 const http = require('http');
+const { io } = require('socket.io-client');
 const parseOptions = require('../lib/options_parser');
 const { buildDirView, expandLogDirs } = require('../lib/log_dirs');
 const { resolveSettings, start } = require('../lib/frontail');
@@ -96,8 +97,10 @@ describe('log directories', function logDirectories() {
 
     // legacy.log is passed explicitly and also lives in the directory; the
     // tailer sees it once, under its argv position.
+    // Containers come first in the tailer's source list, so the same order is
+    // used to build the directory view and to name the namespace.
     settings.files.should.equal(
-      [explicit, path.join(dir, 'app.log'), path.join(dir, 'sub', 'worker.log'), 'web'].join(' '),
+      ['web', explicit, path.join(dir, 'app.log'), path.join(dir, 'sub', 'worker.log')].join(' '),
     );
     // The view is built from the file list the tailer gets, so a file that was
     // passed on the command line and also lives in the directory keeps its
@@ -111,9 +114,48 @@ describe('log directories', function logDirectories() {
     settings.logDirs[0].files.forEach((f) => {
       names[f.fileIndex].should.equal(f.path);
     });
-    // Inside the source list the argv file comes first, so the directory
-    // files are at indexes 0 and 1 even though a container is listed earlier.
-    settings.logDirs[0].files[0].fileIndex.should.equal(0);
+    // The container occupies index 0, so the argv file the tree lists first is
+    // source 1 - the very source the tailer reads for that file.
+    settings.logDirs[0].files[0].fileIndex.should.equal(1);
+  });
+
+  it('registers a file created after startup when the dirs are refreshed', async () => {
+    write('app.log', 'old\n');
+    const { app, base } = await launch(['-D', dir]);
+    const page = await get(base, '/');
+    const ns = page.body.match(/[0-9a-f]{32}/)[0];
+    const socket = io(`${base}/${ns}`, { transports: ['websocket'], reconnection: false });
+    await new Promise((resolve) => socket.on('connect', resolve));
+
+    const seen = { dirs: null, sources: null, done: null };
+    const finished = new Promise((resolve) => {
+      socket.on('options:log-dirs', (value) => { seen.dirs = value; });
+      socket.on('options:sources', (value) => { seen.sources = value; });
+      socket.on('refresh-log-dirs-done', (value) => { seen.done = value; resolve(); });
+    });
+
+    try {
+      write('late.log', 'new file\n');
+      socket.emit('refresh-log-dirs');
+      await finished;
+
+      seen.done.files.should.equal(1);
+      const late = seen.dirs[0].files.find((file) => file.name === 'late.log');
+      late.should.be.ok();
+      // The tree and the tailer agree: the index points at that file.
+      seen.sources[late.fileIndex].name.should.equal(late.path);
+      app.tailer.getSources()[late.fileIndex].name.should.equal(late.path);
+
+      // ...and the freshly found file can actually be read.
+      const rows = [];
+      const readEnd = new Promise((resolve) => socket.on('read-end', resolve));
+      socket.on('bulk-lines', (data) => rows.push(...data.lines));
+      socket.emit('read-from-start', { fileIndex: late.fileIndex, lines: 100 });
+      await readEnd;
+      rows.join('\n').should.containEql('new file');
+    } finally {
+      socket.close();
+    }
   });
 
   // A junction is the only link a plain Windows user can create without

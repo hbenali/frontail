@@ -99,6 +99,25 @@ describe('tail', () => {
     });
   });
 
+  it('appends a file discovered later without renumbering sources', (done) => {
+    temp.open(TEMP_FILE_PROFIX, (err, first) => {
+      writeLines(first.fd, 1);
+      temp.open(TEMP_FILE_PROFIX, (err2, second) => {
+        writeLines(second.fd, 1);
+        const tailer = tail([first.path], { buffer: 5 });
+        opened.push(tailer);
+        tailer.getSources().should.have.length(1);
+
+        tailer.addFiles([first.path, second.path]).should.be.eql([second.path]);
+        const sources = tailer.getSources();
+        sources.should.have.length(2);
+        sources[0].name.should.equal(first.path);
+        sources[1].name.should.equal(second.path);
+        done();
+      });
+    });
+  });
+
   it('removes its process exit listener on close', () => {
     const before = process.listenerCount('exit');
     const tailer = tail([]);

@@ -129,11 +129,33 @@ window.App = (function app(window, document) {
 
   // ── Log directories state ────────────────────────────────────────────
   var _logDirs = []; // array of { dir, name, files: [{ path, name, fileIndex }] }
-  var _hiddenLogFiles = []; // array of fileIndex numbers (committed)
+  // Hiding is committed by path, never by index: fileIndex is a position in
+  // the tailer's source list, and a refresh or a server restart renumbers it
+  // while the file stays the same file.
+  var _hiddenLogPaths = [];
+  // Stored by an older build as bare indexes; mapped to paths once the tree
+  // arrives, then dropped.
+  var _hiddenLegacyIndexes = [];
   // Checkbox edits land here first: the sidebar is repainted only when the
   // settings dialog is saved, so the dialog needs its own scratch copy.
   var _hiddenDraft = null;
-  function _hiddenNow() { return _hiddenDraft || _hiddenLogFiles; }
+  function _hiddenNow() { return _hiddenDraft || _hiddenLogPaths; }
+
+  // Turns indexes saved by an older build into paths, so a file hidden before
+  // the upgrade stays hidden after it.
+  function _migrateLegacyHidden() {
+    if (!_hiddenLegacyIndexes.length) return;
+    var byIndex = {};
+    _logDirs.forEach(function(dirEntry) {
+      (dirEntry.files || []).forEach(function(file) { byIndex[file.fileIndex] = file.path; });
+    });
+    _hiddenLegacyIndexes.forEach(function(index) {
+      var filePath = byIndex[index];
+      if (filePath && _hiddenLogPaths.indexOf(filePath) === -1) _hiddenLogPaths.push(filePath);
+    });
+    _hiddenLegacyIndexes = [];
+    _saveSettings({ hiddenLogFiles: _hiddenLogPaths });
+  }
   var _collapsedLogDirs = []; // array of dir keys the user collapsed
 
   // ── Utilities ─────────────────────────────────────────────────
@@ -722,8 +744,7 @@ function _showToast(msg, duration) {
     // Hide right here rather than relying on _applySourceVisibility(): a rebuild
     // creates fresh buttons, so any earlier style.display is lost and the panel
     // would show files the operator already unticked.
-    var hiddenIndex = _sources.indexOf(s);
-    if (hiddenIndex >= 0 && _hiddenLogFiles.indexOf(hiddenIndex) >= 0) {
+    if (_hiddenLogPaths.indexOf(s.name) >= 0) {
       chip.style.display = 'none';
     }
     return chip;
@@ -1080,8 +1101,8 @@ function _showToast(msg, duration) {
 
       _logDirs.forEach(function(dirEntry) {
         var files = dirEntry.files || [];
-        var indexes = files.map(function(f) { return f.fileIndex; });
-        var visible = indexes.filter(function(i) { return _hiddenNow().indexOf(i) === -1; });
+        var paths = files.map(function(f) { return f.path; });
+        var visible = paths.filter(function(p) { return _hiddenNow().indexOf(p) === -1; });
 
         var group = document.createElement('div');
         group.className = 'log-dir-group';
@@ -1094,15 +1115,15 @@ function _showToast(msg, duration) {
         var dirCheck = document.createElement('input');
         dirCheck.type = 'checkbox';
         dirCheck.className = 'log-dir-check';
-        dirCheck.checked = indexes.length > 0 && visible.length === indexes.length;
-        dirCheck.indeterminate = visible.length > 0 && visible.length < indexes.length;
+        dirCheck.checked = paths.length > 0 && visible.length === paths.length;
+        dirCheck.indeterminate = visible.length > 0 && visible.length < paths.length;
         dirCheck.addEventListener('change', function() {
-          if (!_hiddenDraft) _hiddenDraft = _hiddenLogFiles.slice();
+          if (!_hiddenDraft) _hiddenDraft = _hiddenLogPaths.slice();
           if (dirCheck.checked) {
-            _hiddenDraft = _hiddenDraft.filter(function(i) { return indexes.indexOf(i) === -1; });
+            _hiddenDraft = _hiddenDraft.filter(function(p) { return paths.indexOf(p) === -1; });
           } else {
-            indexes.forEach(function(i) {
-              if (_hiddenDraft.indexOf(i) === -1) _hiddenDraft.push(i);
+            paths.forEach(function(p) {
+              if (_hiddenDraft.indexOf(p) === -1) _hiddenDraft.push(p);
             });
           }
           _renderLogDirs();
@@ -1121,7 +1142,7 @@ function _showToast(msg, duration) {
 
         var count = document.createElement('span');
         count.className = 'log-dir-count';
-        count.textContent = visible.length + '/' + indexes.length;
+        count.textContent = visible.length + '/' + paths.length;
         head.appendChild(count);
         head.appendChild(dirCheck);
 
@@ -1167,14 +1188,14 @@ function _showToast(msg, duration) {
           var cb = document.createElement('input');
           cb.type = 'checkbox';
           cb.className = 'log-file-check';
-          cb.checked = _hiddenNow().indexOf(file.fileIndex) === -1;
+          cb.checked = _hiddenNow().indexOf(file.path) === -1;
           cb.addEventListener('change', function() {
-            if (!_hiddenDraft) _hiddenDraft = _hiddenLogFiles.slice();
-            var pos = _hiddenDraft.indexOf(file.fileIndex);
+            if (!_hiddenDraft) _hiddenDraft = _hiddenLogPaths.slice();
+            var pos = _hiddenDraft.indexOf(file.path);
             if (cb.checked) {
               if (pos !== -1) _hiddenDraft.splice(pos, 1);
             } else if (pos === -1) {
-              _hiddenDraft.push(file.fileIndex);
+              _hiddenDraft.push(file.path);
             }
             _renderLogDirs();
           });
@@ -1207,11 +1228,7 @@ function _showToast(msg, duration) {
     for (var i = 0; i < chips.length; i++) {
       var name = chips[i].getAttribute('data-source');
       if (!name) continue;
-      var index = -1;
-      for (var j = 0; j < _sources.length; j++) {
-        if (_sources[j].name === name) { index = j; break; }
-      }
-      var hidden = index >= 0 && _hiddenLogFiles.indexOf(index) >= 0;
+      var hidden = _hiddenLogPaths.indexOf(name) >= 0;
       chips[i].style.display = hidden ? 'none' : '';
     }
   }
@@ -1958,7 +1975,7 @@ function _showToast(msg, duration) {
         if (_elSettingsX) _elSettingsX.value = String(_startLines);
         if (_elSettingsLang) _elSettingsLang.value = _currentLanguage();
         if (_elSettingsBuf) _elSettingsBuf.value = String(_bufferLimit);
-        _hiddenDraft = _hiddenLogFiles.slice();
+        _hiddenDraft = _hiddenLogPaths.slice();
         _renderLogDirs();
         _elSettingsOverlay.classList.remove('hidden');
         try { if (_elSettingsX) { _elSettingsX.focus(); _elSettingsX.select(); } } catch { /* ignore */ }
@@ -2045,13 +2062,13 @@ function _showToast(msg, duration) {
           // with no way back for the files that have no checkbox of their own,
           // and "All" then asked the server for `indexes: []`, which made it
           // read source 0 behind the operator's back.
-          _hiddenLogFiles = [];
+          _hiddenLogPaths = [];
           _hiddenDraft = [];
           _saveSettings({
             startLines: _startLines,
             language: 'auto',
             bufferLimit: _bufferLimit,
-            hiddenLogFiles: _hiddenLogFiles
+            hiddenLogFiles: _hiddenLogPaths
           });
           _applyLanguage('auto');
           _refreshLineLimit();
@@ -2079,10 +2096,10 @@ function _showToast(msg, duration) {
           _refreshLineLimit();
           var lang = _elSettingsLang ? _elSettingsLang.value : 'auto';
           if (_hiddenDraft) {
-            _hiddenLogFiles = _hiddenDraft;
+            _hiddenLogPaths = _hiddenDraft;
             _hiddenDraft = null;
           }
-          _saveSettings({ startLines: _startLines, language: lang, bufferLimit: _bufferLimit, hiddenLogFiles: _hiddenLogFiles });
+          _saveSettings({ startLines: _startLines, language: lang, bufferLimit: _bufferLimit, hiddenLogFiles: _hiddenLogPaths });
           _applyLanguage(lang);
           _applySourceVisibility();
           _buildSourceSelector(_sources);
@@ -2221,6 +2238,7 @@ function _showToast(msg, duration) {
         })
         .on('options:log-dirs', function(logDirs) {
           _logDirs = Array.isArray(logDirs) ? logDirs : [];
+          _migrateLegacyHidden();
           _renderLogDirs();
           // The sidebar selector is built from options:sources before the log
           // dirs arrive, so rebuild it once we know the folder layout.
@@ -2400,7 +2418,10 @@ function _showToast(msg, duration) {
 
       // Restore hidden log files from directories
       if (_saved.hiddenLogFiles && Array.isArray(_saved.hiddenLogFiles)) {
-        _hiddenLogFiles = _saved.hiddenLogFiles;
+        // Strings are paths (current); numbers are the indexes an older build
+        // saved and are mapped once the directory tree is known.
+        _hiddenLogPaths = _saved.hiddenLogFiles.filter(function(v) { return typeof v === 'string'; });
+        _hiddenLegacyIndexes = _saved.hiddenLogFiles.filter(function(v) { return typeof v === 'number'; });
       }
       _collapsedLogDirs = _saved.collapsedLogDirs || [];
       // Initial render of log dirs (will be updated when options:log-dirs arrives)
