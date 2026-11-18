@@ -37,6 +37,28 @@ describe('socket.io authorization', function socketAuth() {
     return getRequest('/', headers);
   }
 
+  function basic(user, pass) {
+    return 'Basic ' + Buffer.from(user + ':' + pass).toString('base64');
+  }
+
+  function request(method, urlPath, headers) {
+    return new Promise((resolve, reject) => {
+      const req = http.request(
+        `${base}${urlPath}`,
+        { method, headers: headers || {} },
+        (res) => {
+          let body = '';
+          res.on('data', (c) => {
+            body += c;
+          });
+          res.on('end', () => resolve({ res, body }));
+        }
+      );
+      req.on('error', reject);
+      req.end();
+    });
+  }
+
   // The sign-in form is the only way in: the browser dialog is gone.
   function login(user, pass, nextTarget) {
     const payload = new URLSearchParams({
@@ -103,7 +125,17 @@ describe('socket.io authorization', function socketAuth() {
     fs.writeFileSync(log, 'hello\n');
     proc = spawn(
       process.execPath,
-      [path.join(__dirname, '..', 'bin', 'frontail'), '-p', port, '-U', 'user', '-P', 'pass', log],
+      [
+        path.join(__dirname, '..', 'bin', 'frontail'),
+        '-p',
+        port,
+        '-U',
+        'user',
+        '-P',
+        'pass',
+        '--metrics',
+        log,
+      ],
       { stdio: 'ignore' }
     );
     await waitForServer(50);
@@ -188,5 +220,40 @@ describe('socket.io authorization', function socketAuth() {
 
     res.statusCode.should.equal(303);
     res.headers.location.should.equal('/?f=app');
+  });
+
+  // Browsers use the form; scripts and monitoring scrapers send the same
+  // credentials in the header, which is what the wiki documents.
+  it('serves the log page to a request with Basic Auth', async () => {
+    const { res } = await get({ authorization: basic('user', 'pass') });
+
+    res.statusCode.should.equal(200);
+  });
+
+  it('serves /metrics to a Prometheus-style Basic Auth scraper', async () => {
+    const { res, body } = await getRequest('/metrics', {
+      authorization: basic('user', 'pass'),
+    });
+
+    res.statusCode.should.equal(200);
+    body.should.containEql('frontail_sources');
+  });
+
+  it('answers a wrong Basic Auth header with a challenge, not a redirect', async () => {
+    const { res } = await get({ authorization: basic('user', 'wrong') });
+
+    res.statusCode.should.equal(401);
+    res.headers['www-authenticate'].should.equal(
+      'Basic realm="Authorization Required"'
+    );
+  });
+
+  it('challenges a non-GET request that has no session', async () => {
+    const { res } = await request('POST', '/download', {});
+
+    res.statusCode.should.equal(401);
+    res.headers['www-authenticate'].should.equal(
+      'Basic realm="Authorization Required"'
+    );
   });
 });
