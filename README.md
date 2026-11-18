@@ -144,6 +144,7 @@ Options:
   --journal-unit <unit>         follow only this systemd unit (repeatable, implies --journal)
   --ssh <target>                follow a remote file over ssh: [user@]host:/absolute/path (repeatable)
   --allowed-origin <origin>     extra browser origin allowed to open the socket (repeatable); same-host origins always are
+  --trusted-proxy               read the client address from X-Forwarded-For (trusted reverse proxy only)
   --metrics                     expose Prometheus metrics at <url-path>/metrics
   --config <path>               JSON config file (option names + optional "files" array); CLI flags win
   --disable-usage-stats         deprecated, no-op (usage statistics were removed)

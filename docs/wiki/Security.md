@@ -8,6 +8,11 @@ frontail shows whatever it is pointed at, so treat access to it like access to t
 frontail -U admin --password-file /run/secrets/frontail_password /var/log/syslog
 ```
 
+Behind a reverse proxy, add `--trusted-proxy` so the sign-in throttle sees the client
+address from `X-Forwarded-For` instead of the proxy's. Never enable it on a server that
+is reachable directly: the header is supplied by the client.
+```
+
 - **Don't use `-P` on shared machines**: command-line arguments are visible to every local user through `ps`. Use `--password-file`, or the `FRONTAIL_USER` / `FRONTAIL_PASSWORD` environment variables.
 - Daemon mode passes credentials to the background process through its environment, never through arguments.
 - Credentials are compared in constant time.
