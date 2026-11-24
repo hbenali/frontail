@@ -8,10 +8,16 @@ frontail shows whatever it is pointed at, so treat access to it like access to t
 frontail -U admin --password-file /run/secrets/frontail_password /var/log/syslog
 ```
 
+Behind a reverse proxy, add `--trusted-proxy` so the sign-in throttle sees the client
+address from `X-Forwarded-For` instead of the proxy's. Never enable it on a server that
+is reachable directly: the header is supplied by the client.
+```
+
 - **Don't use `-P` on shared machines**: command-line arguments are visible to every local user through `ps`. Use `--password-file`, or the `FRONTAIL_USER` / `FRONTAIL_PASSWORD` environment variables.
 - Daemon mode passes credentials to the background process through its environment, never through arguments.
 - Credentials are compared in constant time.
-- The log stream's WebSocket is protected too: it only accepts a browser whose session actually passed Basic Auth (a signed session cookie that the server has marked authenticated). Visitors who fail Basic Auth never get a session.
+- The log stream's WebSocket is protected too: it only accepts a browser whose session actually passed the sign-in check (a signed session cookie that the server has marked authenticated). Visitors who fail sign-in never get a session.
+- With credentials set, frontail shows its own sign-in page rather than the browser's Basic Auth dialog. The page is served with the same Content-Security-Policy as the rest of the UI, failed attempts are throttled per client address, and `/logout` ends the session. Sessions are held in memory: a restart signs every visitor out.
 
 ## HTTPS
 

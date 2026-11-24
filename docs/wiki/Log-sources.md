@@ -13,6 +13,33 @@ Log rotation is handled (`tail -F`). The last `-n` lines are shown on start.
 
 If a file can't be read, frontail says so in the log view, e.g. `[frontail] /var/log/messages: cannot open ... Permission denied`. See [Troubleshooting](Troubleshooting).
 
+## Directories
+
+Instead of naming every file, mount a volume with logs and let the files inside it become sources:
+
+```bash
+frontail -D /var/log -D /srv/app/logs
+```
+
+Every log file found in those directories gets its own pill, grouped under a folder named after the directory and counted as `enabled/total` (`nginx 46/46`). Files you also list on the command line are not tailed twice.
+
+The walk is bounded on purpose, because a mounted volume can hold thousands of files and a few multi-gigabyte databases:
+
+- up to **3 levels** deep and **200 files** in total,
+- files larger than **64 MB** are skipped,
+- archives (`.gz`, `.bz2`, `.xz`, `.zip`, `.zst`, `.lz4`, `.7z`) and binary files are skipped,
+- symlinked directories are visited once, so loops cannot hang the walk.
+
+The listing is built at start-up: a log file created later needs a restart to show up.
+
+In Docker, mount the directory rather than the individual files:
+
+```bash
+docker run -d -p 9001:9001 -v /var/log:/log hbenali/frontail -D /log
+```
+
+A bind mount of a single file follows the inode Docker saw when the container started, so after `logrotate` replaces that file the container keeps reading the rotated one. Mounting the directory avoids it: names stay the same, `tail -F` reopens them, and the whole set is listed for you.
+
 ## stdin
 
 ```bash

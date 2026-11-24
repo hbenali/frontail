@@ -45,9 +45,16 @@
     return source === state.selectedSource;
   }
 
+  function levelFilterActive(state) {
+    var f = state.levelFilters || {};
+    return !(f.error !== false && f.warn !== false && f.info !== false && f.debug !== false);
+  }
+
   function matchesLevel(text, state) {
     var level = Formats.detectLevel(text);
-    if (!level) return true; // unclassified lines are never hidden by level chips
+    // A line without a known level cannot satisfy any of the level chips, so
+    // it only stays visible while the viewer is unfiltered.
+    if (!level) return !levelFilterActive(state);
     return !!state.levelFilters[level];
   }
 

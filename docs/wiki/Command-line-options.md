@@ -24,6 +24,7 @@ Any option can also be set in a [configuration file](Configuration-file). Comman
 | Option | Description |
 | --- | --- |
 | `[file ...]` | Files to tail; shell globs work. `-` reads stdin |
+| `-D, --dir <path>` | Mount a directory of logs; every log file inside it becomes a source, grouped under the directory in the sidebar (repeatable) |
 | `-C, --container <container>` | Docker/Podman container name or id (repeatable) |
 | `--container-engine <engine>` | `docker` (default) or `podman` |
 | `--journal` | Follow the systemd journal |
@@ -42,6 +43,7 @@ Details and examples: [Log sources](Log-sources).
 | `--password-file <path>` | Read the password from a file, e.g. a Docker/Kubernetes secret |
 | `-k, --key <key.pem>` / `-c, --certificate <cert.pem>` | Serve HTTPS (both required) |
 | `--allowed-origin <origin>` | Extra browser origin allowed to open the log socket (repeatable) |
+| `--trusted-proxy` | Take the client address for the sign-in throttle from `X-Forwarded-For` (last entry). Only set it when every request really arrives through your own reverse proxy |
 
 Details: [Security](Security).
 

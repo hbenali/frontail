@@ -15,8 +15,12 @@ try {
   process.exit(1);
 }
 
+// A directory given with --dir only produces sources through expandLogDirs, so
+// it has to be counted here; otherwise `frontail -D /var/log` exits with
+// "Arguments needed" even though it has something to tail.
 if (
   program.args.length === 0 &&
+  settings.dirFiles.length === 0 &&
   program.container.length === 0 &&
   settings.extraSources.length === 0
 ) {

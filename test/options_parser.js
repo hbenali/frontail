@@ -28,7 +28,7 @@ describe('options_parser --config', () => {
     const opts = parse('/a.log');
 
     opts.port.should.equal(1234);
-    opts.uiHideTopbar.should.be.true;
+    opts.uiHideTopbar.should.be.true();
     opts.theme.should.equal('dark');
   });
 

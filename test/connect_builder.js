@@ -113,7 +113,7 @@ describe('connectBuilder', () => {
     app.use((req, res) => res.end());
 
     request(app).get('/').end((err, res) => {
-      (res.headers['set-cookie'] === undefined).should.be.true;
+      (res.headers['set-cookie'] === undefined).should.be.true();
       done(err);
     });
   });
@@ -129,7 +129,7 @@ describe('connectBuilder', () => {
     // failed Basic Auth: 401 and no session at all
     request(app).get('/').end((err1, bad) => {
       bad.status.should.equal(401);
-      (bad.headers['set-cookie'] === undefined).should.be.true;
+      (bad.headers['set-cookie'] === undefined).should.be.true();
 
       request(app)
         .get('/')

@@ -48,8 +48,8 @@ describe('downloads', () => {
       .end((err, res) => {
         const [info] = JSON.parse(res.text);
         info.name.should.equal('app.log');
-        info.exists.should.be.true;
-        info.tooLarge.should.be.false;
+        info.exists.should.be.true();
+        info.tooLarge.should.be.false();
         done(err);
       });
   });

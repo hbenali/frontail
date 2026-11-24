@@ -37,7 +37,9 @@
       <div class="sidebar-body">
 
         <div class="section">
-          <div class="section-label">Sources</div>
+          <div class="section-head">
+            <div class="section-label" data-i18n="ui.sidebar.sources">Sources</div>
+                      </div>
           <div class="source-list" id="sourceList">
             <div class="file-chip">
               <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2 1h6l2.5 2.5V11H2V1z" stroke="currentColor" stroke-width="1.1" stroke-linejoin="round"/><path d="M8 1v2.5h2.5" stroke="currentColor" stroke-width="1.1" stroke-linejoin="round"/></svg>
@@ -47,33 +49,33 @@
         </div>
 
         <div class="section">
-          <div class="section-label">Live Stats</div>
+          <div class="section-label" data-i18n="ui.sidebar.liveStats">Live Stats</div>
           <div class="stats-grid">
             <div class="stat-card">
               <span class="stat-val" id="totalLines">0</span>
-              <span class="stat-name">Total</span>
+              <span class="stat-name" data-i18n="ui.stats.total">Total</span>
             </div>
             <div class="stat-card">
               <span class="stat-val" id="visibleLines">0</span>
-              <span class="stat-name">Visible</span>
+              <span class="stat-name" data-i18n="ui.stats.visible">Visible</span>
             </div>
             <div class="stat-card error">
               <span class="stat-val" id="errorCount">0</span>
-              <span class="stat-name">Errors</span>
+              <span class="stat-name" data-i18n="ui.stats.errors">Errors</span>
             </div>
             <div class="stat-card warn">
               <span class="stat-val" id="warnCount">0</span>
-              <span class="stat-name">Warns</span>
+              <span class="stat-name" data-i18n="ui.stats.warns">Warns</span>
             </div>
           </div>
         </div>
 
         <div class="section">
-          <div class="section-label">Filter</div>
+          <div class="section-label" data-i18n="ui.sidebar.filter">Filter</div>
           <div class="input-group">
             <svg class="input-icon" width="13" height="13" viewBox="0 0 13 13" fill="none" aria-hidden="true"><circle cx="5.5" cy="5.5" r="4" stroke="currentColor" stroke-width="1.2"/><path d="M9 9l2.5 2.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
-            <input type="text" class="text-input" id="filterInput" placeholder="Filter logs…" tabindex="1" autocomplete="off" spellcheck="false">
-            <button class="clear-btn hidden" id="filterClear" aria-label="Clear filter">
+            <input type="text" class="text-input" id="filterInput" placeholder="Filter logs…" tabindex="1" autocomplete="off" spellcheck="false" data-i18n="ui.filter.placeholder">
+            <button class="clear-btn hidden" id="filterClear" aria-label="Clear filter" data-i18n-aria="ui.filter.clearAria">
               <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M1.5 1.5l8 8M9.5 1.5l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
             </button>
           </div>
@@ -83,6 +85,7 @@
             <label class="toggle-item"><input type="checkbox" id="invertFilter" class="chip-check"><span class="chip">Invert</span></label>
           </div>
           <div class="toggle-row level-chip-row" id="levelChips">
+            <button type="button" class="level-chip level-chip-all active" data-level="all" data-i18n="ui.filter.all">All</button>
             <button type="button" class="level-chip active" data-level="error">Error</button>
             <button type="button" class="level-chip active" data-level="warn">Warn</button>
             <button type="button" class="level-chip active" data-level="info">Info</button>
@@ -91,75 +94,83 @@
         </div>
 
         <div class="section">
-          <div class="section-label">Saved Filters</div>
+          <div class="section-label" data-i18n="ui.sidebar.savedFilters">Saved Filters</div>
           <div class="saved-filter-list" id="savedFilterList"></div>
           <div class="input-group" style="margin-top:8px">
-            <input type="text" class="text-input" id="savedFilterName" placeholder="Name this filter…" autocomplete="off" spellcheck="false">
-            <button class="add-btn" id="savedFilterSave" aria-label="Save current filter" title="Save current filter">
+            <input type="text" class="text-input" id="savedFilterName" placeholder="Name this filter…" autocomplete="off" spellcheck="false" data-i18n="ui.savedFilters.namePlaceholder">
+            <button class="add-btn" id="savedFilterSave" aria-label="Save current filter" title="Save current filter" data-i18n-aria="ui.savedFilters.saveAria" data-i18n-title="ui.savedFilters.saveTitle">
               <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1.5v9M1.5 6h9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
             </button>
           </div>
         </div>
 
         <div class="section">
-          <div class="section-label">Highlight Keywords</div>
+          <div class="section-label" data-i18n="ui.sidebar.highlights">Highlight Keywords</div>
           <div class="highlight-list" id="highlightList"></div>
           <div class="input-group" style="margin-top:8px">
-            <input type="text" class="text-input" id="highlightInput" placeholder="Add keyword…" autocomplete="off" spellcheck="false">
-            <button class="add-btn" id="highlightAdd" aria-label="Add highlight">
+            <input type="text" class="text-input" id="highlightInput" placeholder="Add keyword…" autocomplete="off" spellcheck="false" data-i18n="ui.highlights.inputPlaceholder">
+            <button class="add-btn" id="highlightAdd" aria-label="Add highlight" data-i18n-aria="ui.highlights.addAria">
               <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1.5v9M1.5 6h9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
             </button>
           </div>
         </div>
 
         <div class="section">
-          <div class="section-label">Controls</div>
+          <div class="section-label" data-i18n="ui.sidebar.controls">Controls</div>
           <div class="ctrl-grid">
-            <button class="ctrl-btn" id="pauseBtn" data-state="running" aria-label="Pause/Resume">
+            <button class="ctrl-btn" id="pauseBtn" data-state="running" aria-label="Pause/Resume" data-i18n-aria="ui.controls.pauseAria">
               <svg id="pauseIcon" width="13" height="13" viewBox="0 0 13 13" fill="none"><rect x="1.5" y="1.5" width="3.5" height="10" rx="1" fill="currentColor"/><rect x="8" y="1.5" width="3.5" height="10" rx="1" fill="currentColor"/></svg>
-              <span id="pauseLabel">Pause</span>
+              <span id="pauseLabel" data-i18n="ui.controls.pauseLabelPause">Pause</span>
             </button>
-            <button class="ctrl-btn" id="clearBtn" aria-label="Clear logs">
+            <button class="ctrl-btn" id="clearBtn" aria-label="Clear logs" data-i18n-aria="ui.controls.clearAria">
               <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2 4h9M4.5 4V2.5h4V4M3 4l.6 7h5.8l.6-7" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              <span>Clear</span>
+              <span data-i18n="ui.controls.clear">Clear</span>
             </button>
-            <button class="ctrl-btn" id="wrapBtn" data-state="off" aria-label="Toggle word wrap">
+            <button class="ctrl-btn" id="wrapBtn" data-state="off" aria-label="Toggle word wrap" data-i18n-aria="ui.controls.wrapAria">
               <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M1.5 3.5h10M1.5 6.5h6a2 2 0 010 4H6M8.5 8.5l2 2-2 2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              <span>Wrap</span>
+              <span data-i18n="ui.controls.wrap">Wrap</span>
             </button>
-            <button class="ctrl-btn" id="timestampBtn" data-state="off" aria-label="Toggle timestamps">
+            <button class="ctrl-btn" id="timestampBtn" data-state="off" aria-label="Toggle timestamps" data-i18n-aria="ui.controls.timestampAria">
               <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><circle cx="6.5" cy="6.5" r="4.5" stroke="currentColor" stroke-width="1.2"/><path d="M6.5 3.5v3l2 1.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              <span>Time</span>
+              <span data-i18n="ui.controls.timestamp">Time</span>
             </button>
-            <button class="ctrl-btn active" id="colorsBtn" data-state="on" aria-label="Toggle log colorizing" title="Colorize logs: ANSI colors + apache/nginx/tomcat/syslog autodetection">
+            <button class="ctrl-btn active" id="colorsBtn" data-state="on" aria-label="Toggle log colorizing" title="Colorize logs: ANSI colors + apache/nginx/tomcat/syslog autodetection" data-i18n-aria="ui.controls.colorsAria" data-i18n-title="ui.controls.colorsAria">
               <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><circle cx="4" cy="4.5" r="2" fill="currentColor"/><circle cx="9" cy="4.5" r="2" fill="currentColor" opacity="0.6"/><circle cx="6.5" cy="9" r="2" fill="currentColor" opacity="0.3"/></svg>
-              <span>Colors</span>
+              <span data-i18n="ui.controls.colors">Colors</span>
             </button>
-            <button class="ctrl-btn" id="readFromStartBtn" aria-label="Read from file beginning">
+            <button class="ctrl-btn" id="readFromStartBtn" aria-label="Read from file beginning" title="Load the whole file from its beginning" data-i18n-aria="ui.controls.readFromStartAria" data-i18n-title="ui.controls.readFromStartAria">
               <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2 2v9M4 6.5h7M8 3.5l3 3-3 3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              <span>Start</span>
+              <span data-i18n="ui.controls.readFromStart">Start</span>
             </button>
-            <button class="ctrl-btn" id="downloadBtn" aria-label="Download log file">
+            <button class="ctrl-btn" id="readStartXBtn" aria-label="Read last 1000 lines" title="Load only the last 1000 lines" data-i18n-aria="ui.controls.readStartXAria" data-i18n-title="ui.controls.readStartXAria">
+              <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2 2v9M4 6.5h5M7.5 4l2.5 2.5-2.5 2.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <span id="readStartLabel" data-i18n="ui.controls.readStartLabel">Start-X (1000)</span>
+            </button>
+            <button class="ctrl-btn" id="startLinesBtn" aria-label="Set how many lines Start X loads" title="How many lines Start X loads" data-i18n-aria="ui.controls.startLinesAria" data-i18n-title="ui.controls.startLinesAria">
+              <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M4.6 2.5L3.2 10.5M9 2.5L7.6 10.5M2 5h9M1.5 8h9" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+              <span data-i18n="ui.controls.startLines">Set X</span>
+            </button>
+            <button class="ctrl-btn" id="downloadBtn" aria-label="Download log file" data-i18n-aria="ui.controls.downloadAria">
               <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M6.5 2v6.5M4 6l2.5 3L9 6M2 11h9" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              <span>Download</span>
+              <span data-i18n="ui.controls.download">Download</span>
             </button>
-            <button class="ctrl-btn hidden" id="downloadSanitizedBtn" aria-label="Download log file with ANSI colors stripped" title="This source contains ANSI color codes — download a plain-text (sanitized) copy">
+            <button class="ctrl-btn hidden" id="downloadSanitizedBtn" aria-label="Download log file with ANSI colors stripped" title="This source contains ANSI color codes — download a plain-text (sanitized) copy" data-i18n-aria="ui.controls.downloadSanitizedAria" data-i18n-title="ui.controls.downloadSanitizedAria">
               <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M6.5 2v6.5M4 6l2.5 3L9 6M2 11h9" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M2 2l9 9" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
-              <span>Sanitized</span>
+              <span data-i18n="ui.controls.downloadSanitizedLabel">Sanitized</span>
             </button>
-            <button class="ctrl-btn" id="downloadFilteredBtn" aria-label="Download currently visible lines" title="Download only the lines currently visible (filter + level + source)">
+            <button class="ctrl-btn" id="downloadFilteredBtn" aria-label="Download currently visible lines" title="Download only the lines currently visible (filter + level + source)" data-i18n-aria="ui.controls.downloadFilteredAria" data-i18n-title="ui.controls.downloadFilteredAria">
               <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M6.5 2v6.5M4 6l2.5 3L9 6M2 11h9" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="6.5" cy="6.5" r="5.5" stroke="currentColor" stroke-width="1" stroke-dasharray="1.5 1.5" fill="none"/></svg>
-              <span>Filtered</span>
+              <span data-i18n="ui.controls.downloadFilteredLabel">Filtered</span>
             </button>
           </div>
         </div>
 
         <div class="section">
-          <div class="section-label">Theme</div>
+          <div class="section-label" data-i18n="ui.sidebar.theme">Theme</div>
           <div class="theme-pills">
-            <button class="theme-pill active" data-theme="dark">Dark</button>
-            <button class="theme-pill" data-theme="light">Light</button>
-            <button class="theme-pill" data-theme="solarized">Solar</button>
+            <button class="theme-pill active" data-theme="dark" data-i18n="ui.theme.dark">Dark</button>
+            <button class="theme-pill" data-theme="light" data-i18n="ui.theme.light">Light</button>
+            <button class="theme-pill" data-theme="solarized" data-i18n="ui.theme.solar">Solar</button>
           </div>
         </div>
 
@@ -168,23 +179,18 @@
       <div class="sidebar-footer">
         <div class="conn-status" id="connStatus">
           <span class="conn-dot" id="connDot"></span>
-          <span id="connText">Connecting…</span>
+          <span id="connText" data-i18n="ui.connection.connecting">Connecting…</span>
         </div>
       </div>
       <div class="sidebar-copyright">
         <span class="version-tag" title="Deployed version">v__VERSION__</span>
         <span class="copyright-sep">·</span>
-        <span>© <a href="https://www.hbenali.ovh" target="_blank" rel="noopener">hbenali</a></span>
-        <span class="copyright-sep">·</span>
-        <a href="https://github.com/hbenali/frontail" target="_blank" rel="noopener">GitHub</a>
-        <span class="copyright-sep">·</span>
-        <a class="sponsor-link" href="https://github.com/sponsors/hbenali" target="_blank" rel="noopener" title="Sponsor this project">
-          <svg width="11" height="11" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 14.25s-6-3.5-6-8A3.5 3.5 0 0 1 8 4.11 3.5 3.5 0 0 1 14 6.25c0 4.5-6 8-6 8z"/></svg>
-          Sponsor
-        </a>
+        <span data-i18n="ui.copyright">© <a href="https://www.hbenali.ovh" target="_blank" rel="noopener">hbenali</a> · <a href="https://github.com/hbenali/frontail" target="_blank" rel="noopener">GitHub</a> · <a class="sponsor-link" href="https://github.com/sponsors/hbenali" target="_blank" rel="noopener" title="Sponsor this project"><svg width="11" height="11" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 14.25s-6-3.5-6-8A3.5 3.5 0 0 1 8 4.11 3.5 3.5 0 0 1 14 6.25c0 4.5-6 8-6 8z"/></svg> Sponsor</a></span>
       </div>
 
     </aside>
+
+    <div class="sidebar-resizer" id="sidebarResizer" role="separator" aria-orientation="vertical" aria-label="Resize sidebar" data-i18n-aria="ui.sidebar.resizerAria" tabindex="0"></div>
 
     <!-- Main log area -->
     <main id="main" class="main">
@@ -201,20 +207,23 @@
             <span class="topbar-title-icon" id="topbarTitleIcon" aria-hidden="true"></span>
             <span class="topbar-file" id="topbarTitle" title="__TITLE__">__TITLE__</span>
             <span class="topbar-count hidden" id="topbarCount"></span>
-            <span class="topbar-filtered-dot hidden" id="topbarFilteredDot" aria-label="Filter active"></span>
+            <span class="topbar-filtered-dot hidden" id="topbarFilteredDot" aria-label="Filter active" data-i18n-aria="ui.topbar.filterActive"></span>
           </span>
         </div>
         <div class="topbar-right">
-          <div class="ansi-badge hidden" id="ansiBadge" title="This source already contains ANSI color codes — format autodetection is skipped for those lines">
+          <div class="ansi-badge hidden" id="ansiBadge" title="This source already contains ANSI color codes — format autodetection is skipped for those lines" data-i18n-title="ui.ansiBadge.title" data-i18n="ui.ansiBadge.ansi">
             ANSI colors
           </div>
           <div class="skipped-badge hidden" id="skippedBadge">
-            <span id="skippedCount">0</span> skipped
+            <span id="skippedCount">0</span> <span data-i18n="ui.topbar.skipped">skipped</span>
           </div>
           <div class="live-indicator" id="liveIndicator">
             <span class="live-dot"></span>
-            <span>LIVE</span>
+            <span data-i18n="ui.live">LIVE</span>
           </div>
+          <button class="settings-btn" id="settingsBtn" aria-label="Settings" title="Settings" data-i18n-aria="ui.topbar.gearAria" data-i18n-title="ui.topbar.gearTitle">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="5" stroke="currentColor" stroke-width="1.5"/><path d="M8 2v3M8 11v3M2 8h3M11 8h3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          </button>
         </div>
       </header>
 
@@ -224,8 +233,8 @@
             <rect x="4" y="4" width="40" height="40" rx="8" stroke="currentColor" stroke-width="1.5" opacity="0.3"/>
             <path d="M12 18h24M12 24h16M12 30h20" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity="0.3"/>
           </svg>
-          <p>Waiting for log data…</p>
-          <span>Lines will appear here as they stream in.</span>
+          <p data-i18n="ui.empty.title">Waiting for log data…</p>
+          <span data-i18n="ui.empty.subtitle">Lines will appear here as they stream in.</span>
         </div>
         <pre id="logContainer" class="log-pre" role="log" aria-live="polite" aria-label="Log output"></pre>
       </div>
@@ -237,9 +246,9 @@
 
       <div class="update-banner hidden" id="updateBanner" role="status">
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M7 2v5.5l3 2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/><circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.3"/></svg>
-        <span>A new version has been deployed.</span>
-        <button class="update-refresh-btn" id="updateRefreshBtn">Refresh</button>
-        <button class="update-dismiss-btn" id="updateDismissBtn" aria-label="Dismiss">
+        <span data-i18n="ui.updateBanner.title">A new version has been deployed.</span>
+        <button class="update-refresh-btn" id="updateRefreshBtn" data-i18n="ui.updateBanner.refresh">Refresh</button>
+        <button class="update-dismiss-btn" id="updateDismissBtn" aria-label="Dismiss" data-i18n-aria="ui.updateBanner.dismissAria">
           <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M1.5 1.5l7 7M8.5 1.5l-7 7" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
         </button>
       </div>
@@ -256,16 +265,82 @@
           <path d="M16 13v7M16 23v2" stroke="var(--warn-color)" stroke-width="2" stroke-linecap="round"/>
         </svg>
       </div>
-      <h2 class="modal-title" id="modalTitle">Large file detected</h2>
-      <p class="modal-body" id="modalBody">This file exceeds 50 MB and may be slow or crash your browser tab if loaded in full.</p>
+      <h2 class="modal-title" id="modalTitle" data-i18n="ui.modal.largeFile.title">Large file detected</h2>
+      <p class="modal-body" id="modalBody" data-i18n="ui.modal.largeFile.body">This file exceeds 50 MB and may be slow or crash your browser tab if loaded in full.</p>
       <p class="modal-size" id="modalSize"></p>
       <div class="modal-actions">
-        <button class="modal-btn modal-btn-secondary" id="modalCancel">Cancel</button>
-        <button class="modal-btn modal-btn-ghost" id="modalLoadAnyway">Load anyway</button>
-        <button class="modal-btn modal-btn-primary" id="modalDownload">
+        <button class="modal-btn modal-btn-secondary" id="modalCancel" data-i18n="ui.modal.largeFile.cancel">Cancel</button>
+        <button class="modal-btn modal-btn-ghost" id="modalLoadAnyway" data-i18n="ui.modal.largeFile.loadAnyway">Load anyway</button>
+        <button class="modal-btn modal-btn-primary" id="modalDownload" data-i18n="ui.modal.largeFile.download">
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 2v7M4.5 6.5L7 9.5l2.5-3M2 12h10" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
           Download file
         </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Set X lines modal -->
+  <div class="modal-overlay hidden" id="setXModalOverlay" role="dialog" aria-modal="true" aria-labelledby="setXModalTitle">
+    <div class="modal">
+      <div class="modal-icon">
+        <svg width="32" height="32" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+          <path d="M4.6 2.5L3.2 10.5M9 2.5L7.6 10.5M2 5h9M1.5 8h9" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <h2 class="modal-title" id="setXModalTitle" data-i18n="ui.modal.setX.title">Set lines for "Start X"</h2>
+      <p class="modal-body" data-i18n="ui.modal.setX.hint">Allowed range: 1–1000000</p>
+      <div class="modal-input">
+        <input type="number" id="setXInput" min="1" max="1000000" step="1" autocomplete="off" aria-label="Number of lines for Start X">
+      </div>
+      <div class="modal-actions">
+        <button class="modal-btn modal-btn-secondary" id="setXModalCancel" data-i18n="ui.modal.setX.cancel">Cancel</button>
+        <button class="modal-btn modal-btn-primary" id="setXModalSave" data-i18n="ui.modal.setX.save">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings modal -->
+  <div class="modal-overlay hidden" id="settingsModalOverlay" role="dialog" aria-modal="true" aria-labelledby="settingsModalTitle">
+    <div class="modal modal-wide">
+      <div class="modal-icon">
+        <svg width="32" height="32" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+          <circle cx="16" cy="16" r="10" stroke="var(--accent)" stroke-width="1.5"/>
+          <path d="M16 6v5M16 21v5M6 16h5M21 16h5" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <h2 class="modal-title" id="settingsModalTitle" data-i18n="ui.settings.title">Settings</h2>
+      <div class="settings-form">
+        <div class="setting-row">
+          <label for="settingsDefaultX" data-i18n="ui.settings.defaultX.label">Default X</label>
+          <input type="number" id="settingsDefaultX" min="1" max="1000000" step="1" autocomplete="off" data-i18n-title="ui.settings.defaultX.hint">
+          <span class="setting-hint" data-i18n="ui.settings.defaultX.hint">Number of lines for "Start X" (1–1000000)</span>
+        </div>
+        <div class="setting-row">
+          <label for="settingsLanguage" data-i18n="ui.settings.language.label">Language</label>
+          <select id="settingsLanguage" aria-label="Language">
+            <option value="auto" data-i18n="ui.settings.language.auto">Auto (browser)</option>
+            <option value="ru" data-i18n="ui.settings.language.ru">Русский</option>
+            <option value="en" data-i18n="ui.settings.language.en">English</option>
+          </select>
+        </div>
+        <div class="setting-row">
+          <label for="settingsBufferLimit" data-i18n="ui.settings.bufferLimit.label">Log buffer</label>
+          <input type="number" id="settingsBufferLimit" min="100" max="1000000" step="100" autocomplete="off" data-i18n-title="ui.settings.bufferLimit.hint">
+          <span class="setting-hint" data-i18n="ui.settings.bufferLimit.hint">Lines kept in the live view (100–1000000)</span>
+        </div>
+        <div class="setting-row">
+          <div class="setting-row-head">
+            <h3 class="setting-row-label" data-i18n="ui.settings.logDirsTitle">Connected directories</h3>
+            <button type="button" class="modal-btn modal-btn-ghost log-dirs-refresh" id="logDirsRefresh" data-i18n="ui.settings.logDirsRefresh">Refresh</button>
+          </div>
+          <div id="logDirsTree" class="log-dirs-tree"></div>
+          <span class="setting-hint" data-i18n="ui.settings.logDirsHint">Files in these directories can be enabled or disabled. Disabled files do not appear in the sources list.</span>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="modal-btn modal-btn-ghost" id="settingsModalReset" data-i18n="ui.settings.reset">Reset</button>
+        <button class="modal-btn modal-btn-secondary" id="settingsModalCancel" data-i18n="ui.settings.cancel">Close</button>
+        <button class="modal-btn modal-btn-primary" id="settingsModalSave" data-i18n="ui.settings.save">Save</button>
       </div>
     </div>
   </div>
@@ -277,6 +352,7 @@
   <script src="__PATH__/ansi_up.js"></script>
   <script src="__PATH__/util.js"></script>
   <script src="__PATH__/settings.js"></script>
+  <script src="__PATH__/i18n.js"></script>
   <script src="__PATH__/formats.js"></script>
   <script src="__PATH__/filters.js"></script>
   <script src="__PATH__/highlight.js"></script>

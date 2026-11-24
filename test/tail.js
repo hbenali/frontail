@@ -24,9 +24,12 @@ describe('tail', () => {
   // Close every tailer a test creates so child processes and `process` exit
   // listeners don't pile up across tests.
   const opened = [];
+  // A bare tailer follows nothing until start(); most tests here are about
+  // the streaming behaviour, so they opt into following explicitly.
   const makeTail = (...args) => {
     const t = tail(...args);
     opened.push(t);
+    t.start();
     return t;
   };
 
@@ -69,9 +72,49 @@ describe('tail', () => {
 
       const tailer = makeTail(info.path);
       setTimeout(() => {
-        tailer.getBuffer().should.be.empty;
+        tailer.getBuffer().should.be.empty();
         done();
       }, SPAWN_DELAY);
+    });
+  });
+
+  it('does not replay the buffer when following restarts', (done) => {
+    temp.open(TEMP_FILE_PROFIX, (err, info) => {
+      writeLines(info.fd, 3);
+
+      const tailer = makeTail(info.path, { buffer: 5 });
+      setTimeout(() => {
+        tailer.getBuffer().should.have.length(3);
+        tailer.stop();
+        tailer.start();
+        setTimeout(() => {
+          tailer.getBuffer().should.be.eql([
+            { t: 'line0', s: info.path },
+            { t: 'line1', s: info.path },
+            { t: 'line2', s: info.path }
+          ]);
+          done();
+        }, SPAWN_DELAY * 3);
+      }, SPAWN_DELAY * 3);
+    });
+  });
+
+  it('appends a file discovered later without renumbering sources', (done) => {
+    temp.open(TEMP_FILE_PROFIX, (err, first) => {
+      writeLines(first.fd, 1);
+      temp.open(TEMP_FILE_PROFIX, (err2, second) => {
+        writeLines(second.fd, 1);
+        const tailer = tail([first.path], { buffer: 5 });
+        opened.push(tailer);
+        tailer.getSources().should.have.length(1);
+
+        tailer.addFiles([first.path, second.path]).should.be.eql([second.path]);
+        const sources = tailer.getSources();
+        sources.should.have.length(2);
+        sources[0].name.should.equal(first.path);
+        sources[1].name.should.equal(second.path);
+        done();
+      });
     });
   });
 
@@ -82,6 +125,24 @@ describe('tail', () => {
     process.listenerCount('exit').should.equal(before + 1);
     tailer.close();
     process.listenerCount('exit').should.equal(before);
+  });
+
+  it('readFromStart with maxLines streams only the tail', (done) => {
+    temp.open(TEMP_FILE_PROFIX, (err, info) => {
+      writeLines(info.fd, 5);
+      const tailer = makeTail(info.path, { buffer: 0 });
+      const lines = [];
+
+      tailer.readFromStart(
+        0,
+        (line) => lines.push(line.t),
+        () => {
+          lines.should.eql(['line3', 'line4']);
+          done();
+        },
+        2
+      );
+    });
   });
 
   it('readFromStart streams the whole file then ends', (done) => {

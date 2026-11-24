@@ -35,7 +35,7 @@ describe('session auth (socket.io middleware)', () => {
   };
 
   it('accepts a signed cookie for an authenticated session', () => {
-    (run(`connect.sid=${signed('good', secret)}`) === undefined).should.be.true;
+    (run(`connect.sid=${signed('good', secret)}`) === undefined).should.be.true();
   });
 
   it('rejects a validly signed cookie whose session never passed Basic Auth', () => {

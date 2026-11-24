@@ -19,7 +19,7 @@ describe('presets', () => {
 
   describe('loadHighlightPreset', () => {
     it('is undefined when highlighting is off', () => {
-      (loadHighlightPreset({}, presetDir) === undefined).should.be.true;
+      (loadHighlightPreset({}, presetDir) === undefined).should.be.true();
     });
 
     it('loads the bundled default preset', () => {
@@ -47,7 +47,7 @@ describe('presets', () => {
 
   describe('loadColorsPreset', () => {
     it('is undefined without --ui-colors-preset', () => {
-      (loadColorsPreset({}) === undefined).should.be.true;
+      (loadColorsPreset({}) === undefined).should.be.true();
     });
 
     it('loads rules from a file', () => {

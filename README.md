@@ -42,6 +42,11 @@ docker run -d -p 9001:9001 -v /var/log:/log hbenali/frontail /log/syslog
 | **UI** | Full sidebar/main two-pane layout, JetBrains Mono log font |
 | **Containers** | Stream logs from Docker or Podman containers alongside files |
 | **Source selector** | Sidebar pills to filter by source — click a container or file to isolate its logs |
+| **Log directories** | `-D, --dir` mounts a directory of logs and turns every file inside it into a source, grouped in collapsible folders |
+| **History reads** | **Start** / **Start X** / **Set X** in one click; a new read cancels the running one instead of interleaving both |
+| **Large files** | Lines arrive in batches and are colorized on demand, so 5000 lines of a 25 MB log land in ~2 s |
+| **Sign-in page** | Optional credentials now get a proper login form with `/logout` instead of the browser's Basic Auth dialog |
+| **Languages** | Russian and English UI, picked from the browser and switchable in the settings dialog |
 | **Themes** | Dark, Light, Solarized — switched at runtime with correct per-theme button colours |
 | **Persistence** | Theme, word wrap, timestamps, filter, sidebar state, and source selection saved in `localStorage` |
 | **Filter** | Regex mode, case-sensitive toggle, invert-filter, inline match highlighting |
@@ -139,6 +144,7 @@ Options:
   --journal-unit <unit>         follow only this systemd unit (repeatable, implies --journal)
   --ssh <target>                follow a remote file over ssh: [user@]host:/absolute/path (repeatable)
   --allowed-origin <origin>     extra browser origin allowed to open the socket (repeatable); same-host origins always are
+  --trusted-proxy               read the client address from X-Forwarded-For (trusted reverse proxy only)
   --metrics                     expose Prometheus metrics at <url-path>/metrics
   --config <path>               JSON config file (option names + optional "files" array); CLI flags win
   --disable-usage-stats         deprecated, no-op (usage statistics were removed)
