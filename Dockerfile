@@ -38,10 +38,11 @@ LABEL org.opencontainers.image.title="frontail" \
 # tail correctly detects the shrink and reopens from the start.
 # zlib is listed explicitly with --upgrade so the image gets the newest
 # patched build (CVE-2026-85091 is fixed in 1.3.2-r1; the base ships -r0).
+# musl-utils likewise (CVE-2026-107891 is fixed in 1.2.6-r3; the base ships -r2).
 RUN apk add --no-cache --upgrade \
       --repository=https://dl-cdn.alpinelinux.org/alpine/edge/community \
       --repository=https://dl-cdn.alpinelinux.org/alpine/edge/main \
-      ca-certificates coreutils curl docker-cli su-exec zlib
+      ca-certificates coreutils curl docker-cli musl-utils su-exec zlib
 
 # The base image bundles npm/corepack/yarn for building; this runtime image
 # only ever runs index.js directly, so drop them (also removes their
