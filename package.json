@@ -90,5 +90,9 @@
     "devops"
   ],
   "main": "index",
-  "preferGlobal": true
+  "preferGlobal": true,
+  "overrides": {
+    "minimatch": "^11.0.1",
+    "glob": "^14.0.2"
+  }
 }
